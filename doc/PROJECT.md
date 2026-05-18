@@ -65,6 +65,12 @@ This project is a high-performance **AI-powered rhythmic video editor** that int
 * Resolves the 1-hour marker offset gotcha where `AddMarker()` expects coordinates relative to the timeline start, while clips use absolute frames.
 * Implements absolute-to-relative coordinate conversions to place markers precisely at `01:00:00:11` instead of `02:00:00:11`.
 
+### 10. AI Color Grade Sync & Timeline Coloring (AI 色彩風格大師)
+* **Smart Clip Coloring**: Automatically color-codes timeline clips via `.SetClipColor()` based on narrative roles (Setup = Navy, Detail = Yellow, Catwalk = Orange, Finale = Purple).
+* **Master Grade Cloning Workflow**: While the Python API `CopyGrades()` is exposed, Resolve's color engine has a database sync limitation. The recommended premium workflow is to grade Clip #1 on the color page, and then perform a 1-second GUI copy:
+  1. Select target clips (Clip #2 to #61).
+  2. Hover over the graded Clip #1 and **Middle-Click (scroll-wheel click)** to instantly duplicate the entire node graph!
+
 ---
 
 ## 🚀 Execution & Testing Guide

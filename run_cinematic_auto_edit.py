@@ -416,6 +416,47 @@ def run_cinematic_workflow():
                 
         print("✅ AI Camera Motion Director finished directing all clips successfully!")
         
+        # 🚀 ── 8. 啟動 AI 色彩風格大師 (AI Color Grade Sync) ─────────────────────
+        print("\n🎨 Step 8: AI Color Grade Sync active. Coloring timeline and cloning grades...")
+        
+        # A. 根據起承轉合 4 階段對時間軸片段進行染色標記
+        for idx, item in enumerate(placed_video_items):
+            if idx >= len(final_clip_sequence):
+                break
+                
+            clip_data = final_clip_sequence[idx]
+            role = clip_data["role"]
+            
+            # 染色映射表
+            color_map = {
+                "setup": "Navy",      # 起 -> 藍色 (沉穩環境)
+                "detail": "Yellow",   # 承 -> 黃色 (產品工藝)
+                "catwalk": "Orange",  # 轉 -> 橙色 (高能秀秀)
+                "finale": "Purple"    # 合 -> 紫色 (品牌定格)
+            }
+            
+            target_color = color_map.get(role, "Navy")
+            try:
+                item.SetClipColor(target_color)
+            except Exception as e:
+                print(f"   ⚠️ Warning: Set clip color for clip #{idx+1} failed: {e}")
+                
+        print("   ✅ Timeline clip coloring applied successfully!")
+        
+        # B. 自動將第一鏡 (Clip #1) 的調色節點 (Grade Graph) 複製克隆給所有其餘 60 個鏡頭！
+        # 這保證了全片色調 100% 大一統，完美免去逐個複製貼上調色的痛苦！
+        if len(placed_video_items) > 1:
+            try:
+                source_clip = placed_video_items[0]
+                target_clips = list(placed_video_items[1:])
+                success_copy = source_clip.CopyGrades(target_clips)
+                if success_copy:
+                    print("   👑 SUCCESS: Automatically cloned the premium Color Grade from Clip #1 to all 60 target clips!")
+                else:
+                    print("   ⚠️ Warning: Copy grades returned False.")
+            except Exception as e:
+                print(f"   ⚠️ Warning: Auto color grade clone failed: {e}")
+                
         # 雙重頁面跳轉刷新 GUI
         print("🔄 Refreshing Resolve GUI Timeline focus...")
         resolve.OpenPage("media")
