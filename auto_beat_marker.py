@@ -82,9 +82,51 @@ def run_beat_tagging():
     print(f"🎵 Found target music file: '{os.path.basename(audio_file_path)}'")
     print(f"📂 Path: {audio_file_path}")
     
-    # ── 2. 獲取時間軸的關鍵參數 ──────────────────────────────────
+    # ── 1.1 自動尋找高潮「起承轉合」區間並裁切音軌 ──────────────────────
     timeline_start = timeline.GetStartFrame()
     fps = float(current_project.GetSetting("timelineFrameRate") or 24.0)
+    
+    duration_frames = 0
+    if audio_clip:
+        duration_frames = audio_clip.GetEnd() - audio_clip.GetStart()
+        
+    target_commercial_duration_frames = int(30.0 * fps)
+    
+    # 如果音樂片段大於 30 秒 (加點微小容差值 48 影格 / 2 秒)，說明是一首完整曲目，進行高潮裁剪！
+    if duration_frames > target_commercial_duration_frames + 48:
+        print(f"🎬 [AI Music Climax] Music clip is too long ({duration_frames} frames). Triggering AI Cinematic Climax Arc analysis...")
+        best_t = beat_detector.find_best_climax_window(audio_file_path, 30.0)
+        
+        music_media_item = audio_clip.GetMediaPoolItem() if audio_clip else None
+        if music_media_item:
+            # 清理軌道 1 上的長音軌
+            print(f"🧹 [AI Music Climax] Replacing long audio track with 30s climax crop (Source Start: {best_t:.1f}s)...")
+            timeline.DeleteClips(audio_items)
+            
+            # 重新將裁切好的高潮片段放入音軌 1 最開頭 (recordFrame = timeline_start)
+            media_pool = current_project.GetMediaPool()
+            clips_to_append = [{
+                "mediaPoolItem": music_media_item,
+                "startFrame": int(best_t * fps),
+                "endFrame": int((best_t + 30.0) * fps),
+                "recordFrame": int(timeline_start),
+                "trackIndex": 1,
+                "mediaType": 2
+            }]
+            
+            appended_audio = media_pool.AppendToTimeline(clips_to_append)
+            if appended_audio:
+                print("✅ [AI Music Climax] Successfully placed 30s Climax Audio Cut onto Audio Track 1!")
+                # 重新取得最新的 audio_clip
+                new_audio_items = timeline.GetItemListInTrack("audio", 1)
+                if new_audio_items:
+                    audio_clip = new_audio_items[0]
+            else:
+                print("❌ [AI Music Climax] Failed to replace audio track. Proceeding with original clip.")
+        else:
+            print("⚠️ [AI Music Climax] Could not retrieve original MediaPoolItem. Skipping climax cropping.")
+            
+    # ── 2. 獲取時間軸的關鍵參數 ──────────────────────────────────
     print(f"⚙️ Timeline Start Frame: {timeline_start} | Frame Rate (FPS): {fps}")
     
     # 讀取剪輯軌道的裁切偏移量 (Left Offset)

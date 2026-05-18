@@ -2,6 +2,7 @@ import os
 import sys
 import subprocess
 import tempfile
+import time
 import numpy as np
 import scipy.io.wavfile as wavfile
 import scipy.signal as signal
@@ -182,6 +183,97 @@ def analyze_audio_beats(audio_file_path):
             print(f"⚠️ [Clean] Could not remove temp file: {e}")
             
     return beat_times, tempo
+
+def find_best_climax_window(audio_file_path, duration_sec=30.0):
+    """
+    分析音軌的能量包絡線，使用「起承轉合」數學模型尋找最完美的 30 秒高潮/放緩剪接區間。
+    返回最佳的起點秒數 (T_start)。
+    """
+    if not os.path.exists(audio_file_path):
+        print(f"❌ [Error] Audio file not found at: {audio_file_path}")
+        return 0.0
+        
+    # 建立臨時輸出 wav 檔案路徑
+    temp_dir = tempfile.gettempdir()
+    temp_wav = os.path.join(temp_dir, "resolve_climax_temp.wav")
+    
+    success = transcode_to_wav(audio_file_path, temp_wav)
+    if not success:
+        return 0.0
+        
+    best_start_sec = 0.0
+    try:
+        sr, data = wavfile.read(temp_wav)
+        if data.dtype == np.int16:
+            data = data.astype(np.float32) / 32768.0
+        elif data.dtype == np.int32:
+            data = data.astype(np.float32) / 2147483648.0
+            
+        if len(data.shape) > 1:
+            data = np.mean(data, axis=1)
+            
+        # 計算每一秒的平均 RMS 能量
+        total_sec = len(data) // sr
+        if total_sec <= duration_sec:
+            print(f"⚠️ [AI Music Arc] Audio is too short ({total_sec}s <= {duration_sec}s). Using start 0.0s.")
+            return 0.0
+            
+        sec_energies = []
+        for s in range(total_sec):
+            start_sample = s * sr
+            end_sample = start_sample + sr
+            chunk = data[start_sample:end_sample]
+            rms = np.sqrt(np.mean(chunk**2) + 1e-8)
+            sec_energies.append(rms)
+            
+        # ── 「起承轉合」數學評分模型 ─────────────────────────────
+        # 我們要在 30 秒的視窗中尋找符合以下能量曲線的起點 t：
+        # - 起 (0s-5s): 能量較低/中等，建立懸念。
+        # - 承 (5s-10s): 能量遞增，鼓點與氣氛上揚。
+        # - 轉 (10s-25s): 能量極高，為全曲高潮/副歌 (Chorus Drop)。
+        # - 合 (25s-30s): 能量收斂/放緩，給予完美的結尾收尾。
+        best_score = -9999.0
+        
+        for t in range(0, int(total_sec - duration_sec)):
+            # 提取 30 秒區間的秒能量
+            window = sec_energies[t : t + int(duration_sec)]
+            
+            # 各階段能量
+            e_intro = np.mean(window[0:5])       # 起
+            e_buildup = np.mean(window[5:10])     # 承
+            e_climax = np.mean(window[10:25])     # 轉 (高潮副歌)
+            e_outro = np.mean(window[25:30])      # 合 (放緩結尾)
+            
+            # 1. 獎勵高潮段落的極致能量
+            # 2. 懲罰一開始就已經是最大音量 (缺乏起伏)
+            # 3. 懲罰結尾處仍然是最大音量 (缺乏收尾放緩)
+            # 4. 獎勵從 '起' 到 '承' 的上揚趨勢
+            score = (
+                1.8 * e_climax - 
+                0.6 * e_intro - 
+                0.6 * e_outro + 
+                1.0 * (e_buildup - e_intro)
+            )
+            
+            if score > best_score:
+                best_score = score
+                best_start_sec = float(t)
+                
+        print(f"👑 [AI Music Arc] Chronological Climax Arc found!")
+        print(f"   • Best Start Time: {best_start_sec:.1f}s (Timecode: {time.strftime('%M:%S', time.gmtime(best_start_sec))})")
+        print(f"   • Best End Time: {best_start_sec + duration_sec:.1f}s (Timecode: {time.strftime('%M:%S', time.gmtime(best_start_sec + duration_sec))})")
+    except Exception as e:
+        print(f"❌ [AI Music Arc] Climax analysis failed: {e}. Defaulting to 0.0s.")
+        best_start_sec = 0.0
+        
+    # 清理暫存檔
+    if os.path.exists(temp_wav):
+        try:
+            os.remove(temp_wav)
+        except Exception as e:
+            pass
+            
+    return best_start_sec
 
 if __name__ == "__main__":
     # 簡單的單體測試

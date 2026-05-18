@@ -2,6 +2,16 @@ import sys
 import os
 import time
 import math
+import pickle
+import torch
+
+# ── 確保輸出編碼支援 UTF-8 ──────────────────────────────────────
+if sys.stdout.encoding != 'utf-8':
+    try:
+        import codecs
+        sys.stdout = codecs.getwriter('utf-8')(sys.stdout.buffer, 'strict')
+    except Exception:
+        pass
 
 # ── 引入 Resolve 21 模組 ──────────────────────────────────────
 RESOLVE_MODULE_PATH = r"C:\ProgramData\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting\Modules"
@@ -16,15 +26,34 @@ except ImportError as e:
     sys.exit(1)
 
 if not resolve:
-    print("❌ DaVinci Resolve is not running.")
+    print("❌ DaVinci Resolve is not running. Please open your project first.")
     sys.exit(1)
 
-# ── 設定與路徑 ────────────────────────────────────────────────
+# 引入本機 AI 特徵檢索模組
+try:
+    import smart_asset_selector
+except ImportError:
+    sys.path.append(os.path.dirname(os.path.abspath(__file__)))
+    import smart_asset_selector
+
+# ── 核心設定 ──────────────────────────────────────────────────
 ASSETS_DIR = r"G:\共用雲端硬碟\專業髮品\04影音部\Larry\Schwarzkopf\260511\Video\D2\PRIVATE\M4ROOT\CLIP"
 FOLDER_STRUCTURE = ["Video", "D2", "CLIP"]
 
+# 🚀 商業廣告模板配置 (30秒卡點商業廣告)
+MAX_DURATION_SEC = 30.0  # 限制影片長度為 30 秒
+
+# 🚀 4階段電影感敘事提示詞 (起、承、轉、合 - Chronological Narrative Storyboarding)
+# 藉由時間軸位置動態切換提示詞，使影片具備故事發展邏輯，不再是隨機拼湊的畫面！
+PROMPTS = {
+    "setup": "event backstage preparation hair salon setup venue establishing audience gathering", # 1. 起 (開場準備/現場環境)
+    "detail": "hair styling process stylist working with hairspray cosmetic product closeups detail", # 2. 承 (產品使用/造型細節)
+    "catwalk": "beautiful fashion model catwalk show runway hair spin movement closeup",            # 3. 轉 (大秀高潮/走秀旋轉)
+    "finale": "audience clapping reaction applause grand finale show product branding packaging logo" # 4. 合 (結尾鼓掌/產品定格)
+}
+
 def run_cinematic_workflow():
-    print("🚀 Starting AI Cinematic Auto-Edit Workflow (Math-Ceil Perfect Alignment Mode)...")
+    print("🚀 Starting AI Content-Aware 30s Commercial Editor (Chronological Narrative Arc)...")
     
     project_manager = resolve.GetProjectManager()
     current_project = project_manager.GetCurrentProject()
@@ -62,119 +91,82 @@ def run_cinematic_workflow():
     media_pool.SetCurrentFolder(clip_folder)
     print(f"✅ Active Media Pool Folder set to: '{clip_folder.GetName()}'")
     
-    # ── 2. 掃描並導入硬碟素材 ────────────────────────────────────
-    print("\n📂 Step 2: Scanning local video files on disk...")
-    if not os.path.exists(ASSETS_DIR):
-        print(f"❌ Error: Local assets directory does not exist: {ASSETS_DIR}")
+    # ── 2. 讀取與更新本地 AI 特徵快取 ─────────────────────────────
+    print("\n📂 Step 2: Extracting local video keyframe features...")
+    cache_path = os.path.join(ASSETS_DIR, "video_metadata.pkl")
+    metadata_cache = smart_asset_selector.extract_features_and_cache(ASSETS_DIR, cache_path)
+    if not metadata_cache:
+        print("❌ Error: Video metadata cache is empty.")
         sys.exit(1)
         
-    # 篩選 MP4/MOV 影片
-    video_files = [
-        os.path.join(ASSETS_DIR, f)
-        for f in os.listdir(ASSETS_DIR)
-        if f.lower().endswith((".mp4", ".mov"))
-    ]
-    
-    if not video_files:
-        print("❌ Error: No video files (MP4/MOV) found in the assets directory.")
+    # ── 3. 本地 AI 提取「起、承、轉、合」敘事提示詞的特徵向量 ─────────────────
+    print("\n🧠 Step 3: Extracting CLIP text embeddings for Narrative Arc phases...")
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+    try:
+        from transformers import CLIPModel, CLIPProcessor
+        model = CLIPModel.from_pretrained(smart_asset_selector.MODEL_NAME).to(device)
+        processor = CLIPProcessor.from_pretrained(smart_asset_selector.MODEL_NAME)
+        model.eval()
+        
+        prompt_keys = list(PROMPTS.keys())
+        prompt_texts = [PROMPTS[k] for k in prompt_keys]
+        
+        with torch.no_grad():
+            inputs = processor(text=prompt_texts, return_tensors="pt", padding=True).to(device)
+            text_features = model.get_text_features(**inputs)
+            # L2 歸一化
+            text_embeddings = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
+            text_embeddings_np = text_embeddings.cpu().numpy()
+            
+        prompt_embeddings = {prompt_keys[i]: text_embeddings_np[i] for i in range(len(prompt_keys))}
+        print("✅ Narrative Prompts mapped successfully.")
+    except Exception as e:
+        print(f"❌ CLIP text embedding extraction failed: {e}")
         sys.exit(1)
         
-    print(f"   Found {len(video_files)} video files on disk.")
-    
-    # 檢查是否已導入過以避免重複
-    existing_clips = clip_folder.GetClipList()
-    existing_names = {c.GetName().lower() for c in existing_clips}
-    
-    import_list = []
-    for path in video_files:
-        filename = os.path.basename(path)
-        if filename.lower() not in existing_names:
-            import_list.append(path)
+    # 計算各影片與這四類故事階段的語義相似度
+    clip_rankings = []
+    for filename, meta in metadata_cache.items():
+        img_emb = np.array(meta["embedding"])
+        sims = {}
+        for theme, emb in prompt_embeddings.items():
+            sims[theme] = float(np.dot(img_emb, emb))
             
-    if import_list:
-        print(f"   Importing {len(import_list)} new video clips to Media Pool...")
-        imported_items = media_pool.ImportMedia(import_list)
-        print(f"   Imported {len(imported_items)} clips successfully.")
-    else:
-        print("   All files already exist in Media Pool. Skipping import.")
+        clip_rankings.append({
+            "filename": filename,
+            "path": meta["path"],
+            "sim_setup": sims["setup"],
+            "sim_detail": sims["detail"],
+            "sim_catwalk": sims["catwalk"],
+            "sim_finale": sims["finale"],
+            "motion_energy": meta["motion_energy"],
+            "duration": meta["duration"]
+        })
         
-    # 重新獲取最新的 clips 清單
-    all_clips = clip_folder.GetClipList()
-    print(f"✅ Media Pool total clips inside 'CLIP' folder: {len(all_clips)}")
-    
-    # ── 3. AI 智慧特徵標記 (AI Metadata Tagging) ──────────────────
-    print("\n🏷️ Step 3: Running Intelligent Clip Property Tagging...")
-    
-    good_takes = {
-        "Wide": [],
-        "Medium": [],
-        "CloseUp": [],
-        "Unsorted": []
-    }
-    
-    for idx, clip in enumerate(all_clips):
-        clip_type = clip.GetClipProperty("Type")
-        if clip_type and "video" not in clip_type.lower() and clip_type != "":
-            continue
-            
-        name = clip.GetName()
-        clip.SetClipProperty("Good Take", "1")
-        
-        duration_prop = clip.GetClipProperty("Duration")
-        try:
-            parts = duration_prop.split(":")
-            sec = float(parts[-2]) if len(parts) >= 2 else 5.0
-        except Exception:
-            sec = 5.0
-            
-        # 分類別
-        if sec >= 12 or (idx % 4 == 0):
-            shot_type = "Wide"
-            motion = "Static"
-        elif 4 <= sec < 12 or (idx % 4 in (1, 2)):
-            shot_type = "Medium"
-            motion = "L->R"
-        else:
-            shot_type = "CloseUp"
-            motion = "TL->BR"
-            
-        clip.SetClipProperty("Description", shot_type)
-        clip.SetClipProperty("Comments", motion)
-        
-        clip_info = {
-            "item": clip,
-            "name": name,
-            "movement": motion
-        }
-        good_takes[shot_type].append(clip_info)
-        
-    print(f"   AI Tagging Statistics:")
-    print(f"   • Wide (大遠景空鏡): {len(good_takes['Wide'])} 個")
-    print(f"   • Medium (中景敘事鏡): {len(good_takes['Medium'])} 個")
-    print(f"   • CloseUp (特寫細節鏡): {len(good_takes['CloseUp'])} 個")
-    
-    # ── 4. 讀取時間軸節拍標記 (Markers) ───────────────────────────
-    print("\n🎵 Step 4: Loading beat markers from timeline...")
+    # ── 4. 讀取時間軸節拍標記 (Markers) 並應用 30 秒限制 ────────────────
+    print("\n🎵 Step 4: Loading beat markers and applying 30s commercial limit...")
     markers = timeline.GetMarkers()
     if not markers:
         print("❌ Error: No beat markers found on timeline. Please run auto_beat_marker.py first.")
         sys.exit(1)
         
     timeline_start = timeline.GetStartFrame()
-    # 🚀 關鍵修正：達芬奇 GetMarkers() 返回的鍵（frameId）是相對於時間軸起點的！
-    # 我們必須將其加上 timeline_start 以還原為絕對時間軸影格坐標！
+    fps = float(current_project.GetSetting("timelineFrameRate") or 24.0)
+    max_frames = int(MAX_DURATION_SEC * fps)
+    
+    # 僅篩選出前 30 秒內的節拍點
     beat_frames = sorted([timeline_start + f for f in markers.keys()])
-    print(f"   Found {len(beat_frames)} beat markers for rhythmic cuts.")
+    beat_frames = [f for f in beat_frames if (f - timeline_start) <= max_frames]
+    
+    print(f"   Found {len(beat_frames)} beat markers within the first {MAX_DURATION_SEC} seconds.")
     
     # 獲取背景音樂片段在時間軸上的起點
     audio_items = timeline.GetItemListInTrack("audio", 1)
     audio_start_frame = timeline_start
     if audio_items:
         audio_start_frame = audio_items[0].GetStart()
-        print(f"   Background music clip starts at frame: {audio_start_frame}")
-    
-    # 計算時間軸剪輯區間
-    # 我們讓剪點區間嚴格從音樂起點開始，到每個節拍點
+        
+    # 計算剪接區間
     cut_intervals = []
     last_frame = audio_start_frame
     
@@ -183,65 +175,118 @@ def run_cinematic_workflow():
             cut_intervals.append((last_frame, beat))
             last_frame = beat
             
-    print(f"   Generated {len(cut_intervals)} precise cut intervals aligned to beats.")
+    print(f"   Generated {len(cut_intervals)} precise cut intervals for the 30s commercial.")
     
-    # ── 5. 導演思維與無限素材循環對拍匹配 (Recycling Engine) ───────────
-    print("\n🎬 Step 5: Structuring Cinematic Sequence & Beat Matching...")
+    # ── 5. 4階段故事線與近重複防禦 AI 媒合 (Narrative Matchmaker) ─────────────
+    print("\n🎬 Step 5: Structuring Chronological Narrative & Duplicate Defense...")
     
-    master_pools = {
-        "Wide": list(good_takes["Wide"]),
-        "Medium": list(good_takes["Medium"]),
-        "CloseUp": list(good_takes["CloseUp"]),
-        "Unsorted": list(good_takes["Unsorted"])
-    }
+    # 歸一化運動能量做匹配 [0.0, 1.0]
+    motion_energies = [c["motion_energy"] for c in clip_rankings]
+    min_motion = min(motion_energies) if motion_energies else 0.0
+    max_motion = max(motion_energies) if motion_energies else 1.0
+    motion_range = max_motion - min_motion if max_motion != min_motion else 1.0
     
-    shot_sequence_pattern = ["Wide", "Medium", "CloseUp", "Medium"]
+    # 建立媒體池項目映射表
+    all_clips = clip_folder.GetClipList()
+    clip_map = {c.GetName().lower(): c for c in all_clips}
+    
+    # 建立可用的影片素材庫
+    available_pool = [c for c in clip_rankings if c["filename"].lower() in clip_map]
+    print(f"   🎬 Total available unique clips in Media Pool: {len(available_pool)}")
+    
     final_clip_sequence = []
     
-    def get_best_matching_clip(desired_type, last_mov):
-        pool = good_takes[desired_type]
-        if not pool:
-            if master_pools[desired_type]:
-                good_takes[desired_type] = list(master_pools[desired_type])
-                pool = good_takes[desired_type]
-            else:
-                for alt in ["Medium", "CloseUp", "Wide", "Unsorted"]:
-                    if good_takes[alt]:
-                        pool = good_takes[alt]
-                        break
-                if not pool:
-                    for alt in ["Medium", "CloseUp", "Wide", "Unsorted"]:
-                        if master_pools[alt]:
-                            good_takes[alt] = list(master_pools[alt])
-                            pool = good_takes[alt]
-                            break
-                            
-        if not pool:
-            return None
+    for idx, interval in enumerate(cut_intervals):
+        start_frame, end_frame = interval
+        duration_timeline = end_frame - start_frame
+        
+        # 計算當前卡點相對於時間軸起點的時間 (秒數)
+        elapsed_sec = (start_frame - timeline_start) / fps
+        
+        # 🚀 電影感 4階段敘事時間配給規則 (起、承、轉、合)：
+        # - 0s 到 5s  (起): "setup" (後台準備、現場環境)
+        # - 5s 到 12s (承): "detail" (產品使用、吹整美髮造型過程)
+        # - 12s 到 25s(轉): "catwalk" (大秀走秀、秀髮旋轉高潮)
+        # - 25s 到 30s(合): "finale" (結尾定格、現場熱烈鼓掌)
+        if elapsed_sec < 5.0:
+            role = "setup"
+        elif elapsed_sec < 12.0:
+            role = "detail"
+        elif elapsed_sec < 25.0:
+            role = "catwalk"
+        else:
+            role = "finale"
             
-        for i, clip in enumerate(pool):
-            if last_mov == "TL->BR" and "BR" in clip["movement"]:
-                return pool.pop(i)
-            if last_mov == "L->R" and "R->" in clip["movement"]:
-                return pool.pop(i)
+        # 🚀 音樂節奏運動能量匹配理想值
+        if duration_timeline <= 12:
+            ideal_motion = 0.9  # 高動態
+        elif duration_timeline >= 36:
+            ideal_motion = 0.1  # 靜態美感
+        else:
+            ideal_motion = 0.9 - ((duration_timeline - 12) / 24.0) * 0.8
+            ideal_motion = max(0.1, min(0.9, ideal_motion))
+            
+        if not available_pool:
+            print("   ⚠️ Warning: Available unique pool exhausted! Recycling pool...")
+            available_pool = [c for c in clip_rankings if c["filename"].lower() in clip_map]
+            
+        # 🚀 對「當前故事階段角色」的相似度在剩餘 pool 中進行 [0.0, 1.0] 的重新歸一化
+        theme_similarities = [c["sim_" + role] for c in available_pool]
+        min_sim = min(theme_similarities) if theme_similarities else 0.0
+        max_sim = max(theme_similarities) if theme_similarities else 1.0
+        sim_range = max_sim - min_sim if max_sim != min_sim else 1.0
+        
+        # 獲取當前已選所有片段的特徵向量 (用於近重複防禦)
+        selected_embeddings = []
+        for chosen in final_clip_sequence:
+            name = chosen["name"]
+            if name in metadata_cache:
+                selected_embeddings.append(np.array(metadata_cache[name]["embedding"]))
                 
-        return pool.pop(0)
+        best_candidate_idx = None
+        best_score = -9999.0
         
-    last_movement = "Static"
-    pattern_idx = 0
+        for pool_idx, candidate in enumerate(available_pool):
+            cand_emb = np.array(metadata_cache[candidate["filename"]]["embedding"])
+            is_near_dup = False
+            
+            for s_emb in selected_embeddings:
+                cos_sim = float(np.dot(cand_emb, s_emb))
+                if cos_sim > 0.88:  # 視覺相似度大於 88%
+                    is_near_dup = True
+                    break
+                    
+            norm_motion = (candidate["motion_energy"] - min_motion) / motion_range
+            norm_sim = (candidate["sim_" + role] - min_sim) / sim_range
+            motion_score = 1.0 - abs(norm_motion - ideal_motion)
+            
+            # 得分模型：70% 語義相似度歸一 + 30% 運動強度相符度
+            total_score = 0.7 * norm_sim + 0.3 * motion_score
+            
+            # 近重複大扣分防禦
+            if is_near_dup:
+                total_score -= 2.0
+                
+            if total_score > best_score:
+                best_score = total_score
+                best_candidate_idx = pool_idx
+                
+        # 彈出選中的唯一影片
+        best_candidate = available_pool.pop(best_candidate_idx)
+        
+        final_clip_sequence.append({
+            "item": clip_map[best_candidate["filename"].lower()],
+            "name": best_candidate["filename"],
+            "role": role,
+            "similarity": best_candidate["sim_" + role],
+            "motion": best_candidate["motion_energy"]
+        })
+        
+    print(f"   ✅ Chronological Storyboard compiled successfully. Assigned 4-phase roles to all cuts.")
     
-    for i in range(len(cut_intervals)):
-        desired_type = shot_sequence_pattern[pattern_idx % len(shot_sequence_pattern)]
-        clip = get_best_matching_clip(desired_type, last_movement)
-        if clip:
-            final_clip_sequence.append(clip)
-            last_movement = clip["movement"]
-        pattern_idx += 1
-        
-    # ── 6. 清理並自動剪接至時間軸 (Single Track Perfect Mode) ───────────
+    # ── 6. 清理舊影片並自動剪接至時間軸 ───────────────────────────
     print("\n🔨 Step 6: Assembling Video Clips onto DaVinci Timeline (Video Track 1)...")
     
-    # 清理軌道 1 上舊有的影片 (動態清除軌道 2 作為兼容)
     for t_idx in [1, 2]:
         try:
             video_items = timeline.GetItemListInTrack("video", t_idx)
@@ -251,7 +296,6 @@ def run_cinematic_workflow():
         except Exception as e:
             print(f"   Clear video track {t_idx} failed: {e}")
             
-    # 構造順序追加清單
     clips_to_append = []
     
     for idx, interval in enumerate(cut_intervals):
@@ -264,7 +308,6 @@ def run_cinematic_workflow():
         clip_data = final_clip_sequence[idx]
         clip_item = clip_data["item"]
         
-        # 讀取素材 FPS 並計算動態縮放
         try:
             fps_prop = clip_item.GetClipProperty("FPS")
             src_fps = float(fps_prop) if fps_prop else 24.0
@@ -272,11 +315,8 @@ def run_cinematic_workflow():
             src_fps = 24.0
             
         scale_factor = src_fps / 24.0
-        
-        # 🚀 終極修復：使用 math.ceil 動態補償拉伸，完美克服 pull-down 浮點數轉換相位差！
         duration_source = int(math.ceil(duration_timeline * scale_factor))
         
-        # 讀取總影格數
         frames_prop = clip_item.GetClipProperty("Frames")
         total_frames = int(frames_prop) if (frames_prop and frames_prop.isdigit()) else 240
         
@@ -293,16 +333,15 @@ def run_cinematic_workflow():
         })
         
         if idx < 5 or idx == len(cut_intervals) - 1:
-            print(f"   [Math-Ceil #{idx+1}] RecFrame: {start_timecode_frame} | Timeline Dur: {duration_timeline}f | Src FPS: {src_fps} | Clip: '{clip_data['name']}'")
+            print(f"   [Narrative Arc #{idx+1}] Elapsed: {(start_timecode_frame - timeline_start)/24.0:.2f}s | Phase: {clip_data['role'].upper()} | Similarity: {clip_data['similarity']:.3f} | Motion: {clip_data['motion']:.1f} | Clip: '{clip_data['name']}'")
         elif idx == 5:
             print("   ...")
             
-    # 執行物理對齊組裝
     print("⏳ Sending targeted perfect append commands to Resolve API...")
     appended = media_pool.AppendToTimeline(clips_to_append)
     
     if appended:
-        print(f"🎉 SUCCESS! Placed {len(appended)} video segments flawlessly onto Video Track 1!")
+        print(f"🎉 SUCCESS! Placed {len(appended)} narrative clips flawlessly onto Video Track 1!")
         
         # 雙重頁面跳轉刷新 GUI
         print("🔄 Refreshing Resolve GUI Timeline focus...")
@@ -310,9 +349,10 @@ def run_cinematic_workflow():
         time.sleep(0.3)
         resolve.OpenPage("edit")
         time.sleep(0.3)
-        print("🎬 All Done! Open your DaVinci Resolve Timeline to play your fully synced Perfect Cinematic MV!")
+        print("🎬 All Done! Open your DaVinci Resolve Timeline to play your narrative synced Commercial MV!")
     else:
         print("❌ Error: Append to timeline failed. Resolve returned None.")
         
 if __name__ == "__main__":
+    import numpy as np
     run_cinematic_workflow()
