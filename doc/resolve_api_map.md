@@ -318,4 +318,40 @@ DaVinci Resolve 21 API 方法探索報告
   達芬奇 Python API 僅開放了讀寫 `RetimeProcess` (0=項目, 1=最近幀, 2=幀混合, 3=光流法) 與 `MotionEstimation`，但**並未開放修改 TimelineItem 的 Speed (變速百分比) 或繪製 Speed Curve 變速曲線**。直接嘗試 SetProperty("Speed", ...) 屬性是無效的。
 * **解決方案 (AI Jump-Cut Montage / 快切快進蒙太奇)**：
   如果想要達到「快進/快速閃切」的動態變速效果，我們可以使用 **AI 閃切 (Jump Cut) 演算法**：
-  將同一個原始視訊片段，在時間軸上連續剪接 3 次（每次擷取其不同時間點的 0.3 秒短畫面）。這能在不依賴變速 API 的情況下，創造出極具視覺張力的「快進/閃切跳接」效果，非常適合卡點大秀的黃金 Climax 段落！
+  將同一個原始視訊片段，在時間軸上連續剪接 3 次（每次擷取其不同時間點的 0.3 秒短畫面）。這能在不依賴變速 API 的情況下，創造出極具視覺張力的「快進/閃切跳接」效果，非常適合卡點大秀的黃金 Climax 段落！
+
+### Gotcha #11: 獲取時間軸片段完整屬性字典的無參數隱藏 API
+* **問題描述**：
+  在 Resolve API 中，官方文件並未明確列出 `TimelineItem.GetProperty(key)` 支持哪些屬性字串，嘗試傳入很多標準鍵值（如 `"speed"`, `"rotation"`）經常返回 `None`，讓開發者難以得知支持哪些變形屬性。
+* **解決方案**：
+  **直接呼叫無參數的 `item.GetProperty()`**（不傳入任何 Key 字串）。Resolve 會非常慷慨地回傳一個完整的 **Python 屬性字典**，包含所有支持的可修改鍵值！
+  ```python
+  # 實測回傳結果範例
+  props = item.GetProperty()
+  # 結果：{'Pan': 0.0, 'Tilt': 0.0, 'ZoomX': 1.0, 'ZoomY': 1.0, 'ZoomGang': True, 'RotationAngle': 0.0, 'AnchorPointX': 0.0, 'AnchorPointY': 0.0, 'Pitch': 0.0, 'Yaw': 0.0, 'FlipX': False, 'FlipY': False, 'CropLeft': 0.0, 'CropRight': 0.0, 'CropTop': 0.0, 'CropBottom': 0.0, 'CropSoftness': 0.0, 'CropRetain': False, 'DynamicZoomEase': 0, 'CompositeMode': 0, 'Opacity': 100.0, 'Distortion': 0.0, 'RetimeProcess': 0, 'MotionEstimation': 0, 'Scaling': 0, 'ResizeFilter': 0}
+  ```
+
+### Gotcha #12: AI 鏡頭動態導演與斜切旋轉邊界黑影 Bug (AI Camera Motion Director)
+* **問題描述**：
+  當使用 API `item.SetProperty("RotationAngle", 2.0)` 對片段施加旋轉以模擬手持斜切卡點效果時，由於畫面轉動，四個角落會露出底層的 **黑色背景邊框 (Black Borders)**，嚴重影響大片美觀。
+* **解決方案**：
+  在進行旋轉歪斜的同時，必須同步配合縮放提升，強制畫面進行 **1.08倍的縮放** 進行畫面填充，消除所有黑色死角：
+  ```python
+  item.SetProperty("ZoomX", 1.08)
+  item.SetProperty("ZoomY", 1.08)
+  item.SetProperty("RotationAngle", 2.0 if is_even else -2.0)
+  ```
+
+### Gotcha #13: 編輯頁面關鍵影格屬性 (Transform Keyframes) 寫入限制與動態推拉 Workaround
+* **問題描述**：
+  透過 Python 呼叫 `item.SetProperty("ZoomX", 1.15)` 只能將該片段整個期間設置為單一的**靜態縮放數值**。達芬奇 Python API 嚴格禁止了在 Edit 頁面對 `TimelineItem` 的屬性進行關鍵影格（Keyframe）的動態寫入或時間曲線插值，無法直接用腳本實現「單個片段播放期間的漸進縮放動畫（Ken Burns）」。
+* **大師級工作流解決方案**：
+  1. **快切交替卡點擺動 (Alternating Angle Sway)**：
+     在極為短暫的卡點段落（如 0.25 秒一鏡），透過腳本為相鄰鏡頭交替寫入正負角度的傾斜屬性（如 `RotationAngle = 4.0` 與 `-4.0`）。雖然每鏡內部是靜態的，但隨著高頻率的剪點切換，在重拍播放時會產生極強的手持晃動卡點視覺！
+  2. **一秒點亮內建動態縮放 (Dynamic Zoom Toggle)**：
+     如果需要每個影片在播放時都具有平滑推近/推遠的動態感，最完美的混合工作流為：
+     - 利用腳本自動完成完美的「音樂鼓點剪接、去大抖動與近重複防禦」並對齊時間軸。
+     - 剪接完成後，在達芬奇中按下 `Ctrl + A` 全選所有片段。
+     - 在右上角「檢查器 (Inspector)」將 **「動態縮放 (Dynamic Zoom)」** 開關直接點亮（啟用）。達芬奇會瞬間自動為所有片段套用無縫的推拉動畫，配合精準剪接，視覺效果震撼無比！
+
+

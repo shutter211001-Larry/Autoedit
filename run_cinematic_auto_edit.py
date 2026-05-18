@@ -186,6 +186,30 @@ def run_cinematic_workflow():
     max_motion = max(motion_energies) if motion_energies else 1.0
     motion_range = max_motion - min_motion if max_motion != min_motion else 1.0
     
+    # A. 預先計算並套用 5-beat 滑動平均濾波，平滑「理想運動能量曲線（Motion Continuity Envelope）」
+    # 這能強制相鄰卡點的鏡頭動態緩慢過渡，防止畫面在極快與極慢之間產生鋸齒狀跳變 (視覺衝突)
+    raw_ideal_motions = []
+    for interval in cut_intervals:
+        start_frame, end_frame = interval
+        duration_timeline = end_frame - start_frame
+        if duration_timeline <= 12:
+            ideal = 0.9  # 高動態
+        elif duration_timeline >= 36:
+            ideal = 0.1  # 靜態美感
+        else:
+            ideal = 0.9 - ((duration_timeline - 12) / 24.0) * 0.8
+            ideal = max(0.1, min(0.9, ideal))
+        raw_ideal_motions.append(ideal)
+        
+    smoothed_ideal_motions = []
+    window_size = 5
+    half = window_size // 2
+    n_cuts = len(raw_ideal_motions)
+    for i in range(n_cuts):
+        start_w = max(0, i - half)
+        end_w = min(n_cuts, i + half + 1)
+        smoothed_ideal_motions.append(sum(raw_ideal_motions[start_w:end_w]) / (end_w - start_w))
+        
     # 建立媒體池項目映射表
     all_clips = clip_folder.GetClipList()
     clip_map = {c.GetName().lower(): c for c in all_clips}
@@ -206,7 +230,7 @@ def run_cinematic_workflow():
         # 🚀 電影感 4階段敘事時間配給規則 (起、承、轉、合)：
         # - 0s 到 5s  (起): "setup" (後台準備、現場環境)
         # - 5s 到 12s (承): "detail" (產品使用、吹整美髮造型過程)
-        # - 12s 到 25s(轉): "catwalk" (大秀走秀、秀髮旋轉高潮)
+        # - 12s 到 25s(轉): "catwalk" (大秀走走、秀髮旋轉高潮)
         # - 25s 到 30s(合): "finale" (結尾定格、現場熱烈鼓掌)
         if elapsed_sec < 5.0:
             role = "setup"
@@ -217,14 +241,8 @@ def run_cinematic_workflow():
         else:
             role = "finale"
             
-        # 🚀 音樂節奏運動能量匹配理想值
-        if duration_timeline <= 12:
-            ideal_motion = 0.9  # 高動態
-        elif duration_timeline >= 36:
-            ideal_motion = 0.1  # 靜態美感
-        else:
-            ideal_motion = 0.9 - ((duration_timeline - 12) / 24.0) * 0.8
-            ideal_motion = max(0.1, min(0.9, ideal_motion))
+        # 🚀 使用平滑後的運動包絡線，確保動態過渡絲滑不衝突
+        ideal_motion = smoothed_ideal_motions[idx]
             
         if not available_pool:
             print("   ⚠️ Warning: Available unique pool exhausted! Recycling pool...")
@@ -266,6 +284,20 @@ def run_cinematic_workflow():
             # 近重複大扣分防禦
             if is_near_dup:
                 total_score -= 2.0
+                
+            # 🚀 防震動與大晃動對焦廢片防禦 (Shaky Shot Defense)
+            # 實測運動能量 >= 10.5 多為相機重置、手抖或對焦失敗的廢片，重罰 3.0 分以強迫選用穩定絲滑的 Good Takes！
+            if candidate["motion_energy"] >= 10.5:
+                total_score -= 3.0
+                
+            # 🚀 電影感前後幀「動態留線銜接防禦」 (Motion Continuity Penalty)
+            # 如果目前候選片段的運動能量，與上一鏡片有劇烈物理跳變 (差距 > 3.0)，則給予漸進扣分
+            # 這能強制畫面動態維持「視覺慣性流暢感 (Visual Inertia Flow)」，防止快慢動作瞬間衝突！
+            if final_clip_sequence:
+                prev_motion = final_clip_sequence[-1]["motion"]
+                motion_diff = abs(candidate["motion_energy"] - prev_motion)
+                if motion_diff > 3.0:
+                    total_score -= 0.15 * (motion_diff - 3.0)
                 
             if total_score > best_score:
                 best_score = total_score
@@ -342,6 +374,47 @@ def run_cinematic_workflow():
     
     if appended:
         print(f"🎉 SUCCESS! Placed {len(appended)} narrative clips flawlessly onto Video Track 1!")
+        
+        # 🚀 ── 7. 啟動 AI 鏡頭動態導演 (AI Camera Motion Director) ────────────────
+        print("\n🎥 Step 7: AI Camera Motion Director active. Directing clip scales & rotations...")
+        placed_video_items = timeline.GetItemListInTrack("video", 1)
+        
+        for idx, item in enumerate(placed_video_items):
+            if idx >= len(final_clip_sequence):
+                break
+                
+            clip_data = final_clip_sequence[idx]
+            role = clip_data["role"]
+            
+            zoom_val = 1.0
+            rotation_val = 0.0
+            
+            # 🚀 電影感 4 階段鏡頭設計法則 (大幅增加數值以展現極致視覺張力)：
+            # - 起 (SETUP - 0s 到 5s): 鏡頭完全穩定乾淨
+            if role == "setup":
+                zoom_val = 1.0
+                rotation_val = 0.0
+            # - 承 (DETAIL - 5s 到 12s): 產品與吹風造型大幅推近 (1.10x)，創造極具魄力的產品特寫
+            elif role == "detail":
+                zoom_val = 1.10
+                rotation_val = 0.0
+            # - 轉 (CATWALK - 12s 到 25s): 大秀高潮走秀！交替進行 4.0 與 -4.0 度的強烈斜切 (Slash Cut)，配合 1.15x 縮放 (完全掩蓋黑邊)，營造極其炫酷的手持震動擺感！
+            elif role == "catwalk":
+                zoom_val = 1.15
+                rotation_val = 4.0 if (idx % 2 == 0) else -4.0
+            # - 合 (FINALE - 25s 到 30s): 結尾品牌定格強烈大推近 (1.20x)，將視覺重心完全聚焦在產品與商標！
+            elif role == "finale":
+                zoom_val = 1.20
+                rotation_val = 0.0
+                
+            try:
+                item.SetProperty("ZoomX", zoom_val)
+                item.SetProperty("ZoomY", zoom_val)
+                item.SetProperty("RotationAngle", rotation_val)
+            except Exception as e:
+                print(f"   ⚠️ Warning: Set camera motion for clip #{idx+1} failed: {e}")
+                
+        print("✅ AI Camera Motion Director finished directing all clips successfully!")
         
         # 雙重頁面跳轉刷新 GUI
         print("🔄 Refreshing Resolve GUI Timeline focus...")
