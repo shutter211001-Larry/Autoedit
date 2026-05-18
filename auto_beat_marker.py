@@ -1,6 +1,7 @@
 import os
 import sys
 import time
+import math
 
 # ── 引入 Resolve 21 模組 ──────────────────────────────────────
 RESOLVE_MODULE_PATH = r"C:\ProgramData\Blackmagic Design\DaVinci Resolve\Support\Developer\Scripting\Modules"
@@ -22,12 +23,11 @@ if not resolve:
 try:
     import beat_detector
 except ImportError:
-    # 如果找不到，將當前工作目錄加入路徑
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     import beat_detector
 
 def run_beat_tagging():
-    print("🚀 Starting AI Automated Audio Beat & Marker Tagging System...")
+    print("🚀 Starting AI Automated Audio Beat & Marker Tagging System (Immune to Offset & Silent Intro)...")
     
     project_manager = resolve.GetProjectManager()
     current_project = project_manager.GetCurrentProject()
@@ -56,7 +56,6 @@ def run_beat_tagging():
         mp_item = item.GetMediaPoolItem()
         if mp_item:
             path = mp_item.GetClipProperty("File Path")
-            # 確保檔案路徑存在
             if path and os.path.exists(path):
                 audio_clip = item
                 audio_file_path = path
@@ -65,7 +64,6 @@ def run_beat_tagging():
     if not audio_file_path:
         print("⚠️ Warning: Could not resolve physical file path for Track 1 audio clips.")
         print("Searching active Media Pool folder for audio assets as backup...")
-        # 備份機制：搜尋 Media Pool 當前目錄下的音訊檔
         media_pool = current_project.GetMediaPool()
         current_folder = media_pool.GetCurrentFolder()
         clips = current_folder.GetClipList()
@@ -89,11 +87,18 @@ def run_beat_tagging():
     fps = float(current_project.GetSetting("timelineFrameRate") or 24.0)
     print(f"⚙️ Timeline Start Frame: {timeline_start} | Frame Rate (FPS): {fps}")
     
-    # 獲取音樂片段在時間軸上的起點
+    # 讀取剪輯軌道的裁切偏移量 (Left Offset)
+    left_offset = 0
     audio_start_frame = timeline_start
     if audio_clip:
         audio_start_frame = audio_clip.GetStart()
-        print(f"🔗 Music clip starts on timeline at frame: {audio_start_frame}")
+        try:
+            left_offset = audio_clip.GetLeftOffset()
+        except Exception:
+            left_offset = 0
+        print(f"🔗 Music clip timeline start: {audio_start_frame} | Source Left Offset (Trim): {left_offset} frames")
+        
+    left_offset_sec = left_offset / fps
     
     # ── 3. 呼叫 AI 進行對拍分析 ──────────────────────────────────
     print("\n🎧 Analyzing audio transients... Please wait a few seconds...")
@@ -106,8 +111,24 @@ def run_beat_tagging():
         sys.exit(1)
         
     print(f"🥁 Analysis complete in {analysis_duration:.2f}s! Estimated Tempo: {bpm:.1f} BPM.")
-    print(f"⭐ Detected {len(beat_times)} beats.")
+    print(f"⭐ Detected {len(beat_times)} beats originally.")
     
+    # 🚀 新增機制：靜音前奏節拍反向外推 (Extrapolate Beats for Silent Intro)
+    # 當音樂最前面有靜音或淡入，沒有偵測到節拍時，反向推導規律節拍以保持開頭有卡點
+    beat_interval = 60.0 / bpm
+    first_beat = beat_times[0]
+    
+    if first_beat > beat_interval:
+        extrapolated_beats = []
+        curr = first_beat - beat_interval
+        while curr >= 0.01:
+            extrapolated_beats.append(curr)
+            curr -= beat_interval
+        if extrapolated_beats:
+            extrapolated_beats.reverse()
+            print(f"   💡 Detected silent intro of {first_beat:.2f}s. Extrapolated {len(extrapolated_beats)} rhythmic beats backwards to fill the start.")
+            beat_times = extrapolated_beats + beat_times
+            
     # ── 4. 清理現有的 AI 藍色節拍標記 ────────────────────────────
     print("\n🧹 Clearing existing Blue markers on the timeline to prevent clutter...")
     try:
@@ -119,25 +140,39 @@ def run_beat_tagging():
     except Exception as e:
         print(f"   Note: Clear markers failed or not needed: {e}")
         
-    # ── 5. 將對拍結果轉換為影格並寫入 Resolve ──────────────────────
+    # ── 5. 將對拍結果轉換為時間軸影格並寫入 ───────────────────────────
     print("✍️ Writing new beat markers to timeline...")
     added_count = 0
     
+    # 🚀 延遲補償與剪輯優化偏置 (Latency Compensation & Lead-In Bias)
+    # 預設補償 -0.065 秒 (約合 1.5 影格)，用以精準抵消 FFT 滑動視窗與漢寧平滑濾波產生的相位延遲 (約 69.6ms)，
+    # 同時提供專業剪輯師偏好的 1 影格「視覺領先卡點（Lead-In Cut）」，確保畫面與聽覺在播放時完美卡點，不顯拖沓！
+    LATENCY_OFFSET_SEC = -0.065
+    
     for idx, beat_sec in enumerate(beat_times):
-        # 拍子相對於時間軸起點的影格數
-        # beat_sec 是相對於音訊檔案起點的秒數
-        beat_frame = audio_start_frame + int(round(beat_sec * fps))
+        # 應用延遲補償
+        compensated_sec = beat_sec + LATENCY_OFFSET_SEC
         
-        # 確保不會寫入小於時間軸起點的非法影格
-        if beat_frame < timeline_start:
+        # 🚀 裁切免疫計算：排除被裁切掉的開頭節拍，並偏移時間軸座標
+        if compensated_sec < left_offset_sec:
+            continue
+            
+        # 計算時間軸上的「絕對」影格位置
+        # (compensated_sec - left_offset_sec) 是相對於裁切後音樂片段在時間軸起點的播放時間
+        absolute_frame = audio_start_frame + int(round((compensated_sec - left_offset_sec) * fps))
+        
+        # 🚀 關鍵修正：達芬奇 AddMarker API 接收的 frameId 必須是「相對於時間軸起點的相對影格數」！
+        relative_frame = absolute_frame - timeline_start
+        
+        # 確保不會寫入小於 0 的非法相對影格
+        if relative_frame < 0:
             continue
             
         marker_name = f"Beat {idx+1}"
-        marker_note = f"AI Beat Cut | Time: {beat_sec:.2f}s"
+        marker_note = f"AI Beat Cut | Time in File: {beat_sec:.2f}s"
         
-        # AddMarker 參數: frameId, color, name, note, duration (預設 1), customData
         success = timeline.AddMarker(
-            beat_frame,
+            relative_frame,
             "Blue",
             marker_name,
             marker_note,
@@ -145,13 +180,13 @@ def run_beat_tagging():
         )
         if success:
             added_count += 1
-            if added_count <= 5 or added_count == len(beat_times):
-                print(f"   [Marker #{added_count}] Added Blue marker at frame {beat_frame} ({beat_sec:.2f}s)")
+            if added_count <= 5 or idx == len(beat_times) - 1:
+                print(f"   [Marker #{added_count}] Added Blue marker at relative frame {relative_frame} (Absolute: {absolute_frame} | {beat_sec:.2f}s)")
             elif added_count == 6:
                 print("   ...")
                 
     print(f"\n🎉 SUCCESS! Written {added_count} Blue beat markers to timeline '{timeline.GetName()}'!")
-    print("👉 You can now run 'auto_edit_cinematic.py' to automatically perform a Director's Cut matching these markers!")
+    print("👉 You can now run 'run_cinematic_auto_edit.py' to automatically perform a Director's Cut matching these markers!")
 
 if __name__ == "__main__":
     run_beat_tagging()
