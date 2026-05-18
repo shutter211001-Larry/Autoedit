@@ -218,3 +218,42 @@ DaVinci Resolve 21 API 方法探索報告
   SetTrackName
   SetVoiceIsolationState
   UpdateMarkerCustomData
+
+
+============================================================
+## 🚨 達芬奇 API 實戰踩坑與終極解決方案 (Troubleshooting & Gotchas)
+
+### Gotcha #1: SetCurrentTimeline 焦點失效 Bug (視訊被 append 到錯誤時間軸)
+* **問題描述**：
+  在 Python 中執行 `current_project.SetCurrentTimeline(target_timeline)` 時，雖然背景資料已切換，但達芬奇的畫面（GUI）如果沒有更新，隨後執行的 `media_pool.AppendToTimeline()` **依然會固執地把素材塞入你螢幕上當前正開著的那個時間軸**（例如：將素材全塞進了「北區」而非「南區工作」）。
+* **解決方案**：
+  在代碼中呼叫物理級的「GUI 頁面雙重跳轉」強制刷新 Resolve 焦點，實測 100% 能成功喚醒 GUI 的時間軸焦點：
+  ```python
+  import time
+  current_project.SetCurrentTimeline(target_timeline)
+  resolve.OpenPage("media")
+  time.sleep(0.3)
+  resolve.OpenPage("edit")
+  time.sleep(0.3)
+  ```
+
+### Gotcha #2: AppendToTimeline 傳入 recordFrame 回傳 [None] 的失敗 Bug
+* **問題描述**：
+  在 `AppendToTimeline` 的傳入字典中，若指定了 `"recordFrame"` 參數，API 會在 Resolve 內部靜默失敗，回傳一個包含 None 的列表 `[None]`（外層看起來像成功，但實際上沒有寫入任何片段）。這是因為音訊軌混合、時間碼起點（Timecode Offset）不對齊或軌道鎖定導致的 API 相容性 Bug。
+* **解決方案**：
+  如果目的是將影片片段按節奏一個接一個「順序拼接播放」，**完全不要傳入 `"recordFrame"` 與 `"trackIndex"`**！
+  使用**「順序追加 (Sequential Append)」**，只傳入剪好的 `mediaPoolItem`、`startFrame` 和 `endFrame`，Resolve 就會以 100% 的極致穩定度，自動順序把所有鏡頭無縫拼裝！
+  ```python
+  clips_to_append.append({
+      "mediaPoolItem": clip_item,
+      "startFrame": int(src_start),
+      "endFrame": int(src_end)
+  })
+  media_pool.AppendToTimeline(clips_to_append)
+  ```
+
+### Gotcha #3: 素材 Start Frame 的時間碼偏移陷阱
+* **問題描述**：
+  呼叫 `clip.GetClipProperty("Start")` 雖然回傳 `'0'`（字串），但很多專業相機素材的真實起點是有時間碼（Timecode Offset）的（例如：`Start TC` 顯示 `05:28:25;22`）。在指定剪接起點時，如果直接傳入整數 `0`，有可能會因為小於素材的真實起居影格而導致寫入失敗。
+* **解決方案**：
+  若要截取素材某個部分，需從 `Start` 到 `End` 的相對區間進行 `int` 轉型，並只在素材本身的相對合法格數範圍內做擷取；或使用**順序追加方式**讓 Resolve 自動抓取最安全。
