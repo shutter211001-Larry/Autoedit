@@ -24,12 +24,11 @@ This project is a high-performance **AI-powered rhythmic video editor** that int
 * Implements a high-precision SciPy/NumPy falling-edge Short-Time Energy (RMS) sliding window onset detector to track exact music tempos and transient peaks.
 * **Climax Target Alignment**: Automatically searches for the musical climax window and snaps its start frame perfectly to the timeline offset (`86400`).
 
-### 4. Smart Padding Margin (Button Shake Mitigation)
-* Implements a **15% Safety Margin Guard** on both ends of raw clips. It completely bypasses the high-shake intervals typical when pressing the record/stop buttons, cropping clips exclusively from the pristine remaining 70% middle section.
-
-### 5. Rolling Motion Stability Scanner
-* Downsamples video frame dimensions by 99% to `160x90` in memory (filtering out wind, hair movement, etc. to isolate camera motion) and runs a `downsample_step = 6` forward decoder (**5.2x speedup** over seek decodes).
-* Computes rolling variance $\text{Var}(M[s : s+D])$ to detect smooth consistent pans or hovers and applies a heavy Peak Shake Penalty to filter out sudden hand bumps.
+### 4. Surgical Golden-Crop & Triple Shaky Defense Architecture
+* To isolate and filter out high-shake intervals, camera repositioning adjustments, or out-of-focus wiggles, the system implements a highly rigorous triple-defense filtering pipeline:
+  1. **Phase 1: 15% Smart Padding Margin**: Automatically masks out the first 15% and last 15% of each raw take (where button press impacts or release jitters usually occur). The search engine is strictly confined to the remaining **70% Pristine Mid-section**.
+  2. **Phase 2: Rolling Motion Stability Scanner**: Downsamples frame dimensions by 99% to `160x90` in memory (filtering out fine-frequency high-detail movements like wind or hair, isolating macroscopic camera pans). Using a high-speed forward decoder (running **5.2x faster** than traditional seek decodes), it computes the rolling variance of camera motion vectors $\text{Var}(M[s : s+D])$ across a sliding window of size $D$. The optimization engine snaps the crop's In point to the absolute minimum variance window, placing only this rock-solid segment onto the timeline while **completely discarding the chaotic parts of the raw clip**.
+  3. **Phase 3: Shaky Take Rejection (Bad Take Defense)**：If an entire raw file is extremely chaotic (e.g. running hand-held shots with no stable window whatsoever), and its lowest rolling variance remains above the safety threshold (`10.5`), the AI Director triggers a heavy **`-3.0 point penalty`** on that file, forcing the selector to **completely reject the chaotic asset** and choose a stable alternative from the pool, keeping bad takes 100% off the timeline.
 
 ### 6. Motion Vector Monotonicity & Direction Reversal Defense
 * **1D Horizontal Projection Profile Cross-Correlation**:
