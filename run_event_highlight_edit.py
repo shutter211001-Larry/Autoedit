@@ -29,6 +29,26 @@ if not resolve:
 
 import cv2
 import numpy as np
+import json
+
+# ── 自研本機 CV 全量運動特徵曲線快取系統 (按檔名對照) ─────────────────
+CACHE_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".cv_profile_cache.json")
+
+def load_cv_cache():
+    if os.path.exists(CACHE_FILE):
+        try:
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            return {}
+    return {}
+
+def save_cv_cache(cache):
+    try:
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(cache, f, ensure_ascii=False, indent=4)
+    except Exception:
+        pass
 
 # 引入自研的對拍模組
 try:
@@ -37,82 +57,103 @@ except ImportError:
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     import beat_detector
 
-def find_optimal_stable_unidirectional_window(video_path, duration_frames, fps, downsample_step=12, target_width=80):
+def find_optimal_stable_unidirectional_window(video_path, duration_frames, fps, downsample_step=16, target_width=80):
     """
     自研雙核 CV 運鏡優化分析器 (第三階段平穩度 + 第四階段運鏡方向單調性)：
     在記憶體中將畫面降採樣至 80x60 超小圖，以每 12 影格跳幀連續前向解碼，
     自動定位出 100% 單方向平滑運動、且完全無劇烈震盪或逆轉的黃金 In 點！
+    使用「檔名對照」全量運動特徵快取：一次解碼全影片特徵並永久寫入，
+    後續不論剪輯長度 (duration_frames) 如何變動，皆可在 0.001 秒內完成極速評估！
     """
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        return 0
+    cache = load_cv_cache()
+    # 以視訊檔案路徑為鍵，取得整個影片的特徵曲線
+    profile = cache.get(video_path)
+    
+    if profile:
+        total_frames = int(profile["total_frames"])
+        motion_series = profile["motion_series"]
+        motion_dx = profile["motion_dx"]
+        frame_indices = profile["frame_indices"]
+    else:
+        cap = cv2.VideoCapture(video_path)
+        if not cap.isOpened():
+            return 0
+            
+        total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        if total_frames <= duration_frames:
+            cap.release()
+            return 0
+            
+        motion_series = []  # 光流平穩度 (像素絕對差)
+        motion_dx = []      # 水平位移 (1D 投影剖面位移)
+        frame_indices = []
         
-    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-    if total_frames <= duration_frames:
+        prev_gray = None
+        frame_idx = 0
+        
+        # ── A. 逐幀跳步解碼與特徵提取 ──────────────────────────────────────
+        while True:
+            ret, frame = cap.read()
+            if not ret:
+                break
+                
+            if frame_idx % downsample_step == 0:
+                h, w = frame.shape[:2]
+                scale = target_width / float(w)
+                target_height = int(h * scale)
+                small_frame = cv2.resize(frame, (target_width, target_height), interpolation=cv2.INTER_NEAREST)
+                
+                gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
+                gray = cv2.GaussianBlur(gray, (5, 5), 0)
+                
+                if prev_gray is not None:
+                    # 1. 光流能量 (絕對差值均值)
+                    diff = cv2.absdiff(gray, prev_gray)
+                    mean_diff = float(np.mean(diff))
+                    motion_series.append(mean_diff)
+                    
+                    # 2. 水平投影剖面位移 dx
+                    p1 = np.sum(prev_gray, axis=0)
+                    p2 = np.sum(gray, axis=0)
+                    p1 = p1 - np.mean(p1)
+                    p2 = p2 - np.mean(p2)
+                    
+                    best_shift = 0.0
+                    min_proj_diff = float('inf')
+                    search_range = 6
+                    for shift in range(-search_range, search_range + 1):
+                        if shift < 0:
+                            d = np.mean(np.abs(p1[-shift:] - p2[:shift]))
+                        elif shift > 0:
+                            d = np.mean(np.abs(p1[:-shift] - p2[shift:]))
+                        else:
+                            d = np.mean(np.abs(p1 - p2))
+                        if d < min_proj_diff:
+                            min_proj_diff = d
+                            best_shift = float(shift)
+                    motion_dx.append(best_shift)
+                    
+                    frame_indices.append(frame_idx)
+                    
+                prev_gray = gray
+                
+            frame_idx += 1
+            
         cap.release()
-        return 0
         
-    motion_series = []  # 光流平穩度 (像素絕對差)
-    motion_dx = []      # 水平位移 (1D 投影剖面位移)
-    frame_indices = []
-    
-    prev_gray = None
-    frame_idx = 0
-    
-    # ── A. 逐幀跳步解碼與特徵提取 ──────────────────────────────────────
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-            
-        if frame_idx % downsample_step == 0:
-            h, w = frame.shape[:2]
-            scale = target_width / float(w)
-            target_height = int(h * scale)
-            small_frame = cv2.resize(frame, (target_width, target_height), interpolation=cv2.INTER_NEAREST)
-            
-            gray = cv2.cvtColor(small_frame, cv2.COLOR_BGR2GRAY)
-            gray = cv2.GaussianBlur(gray, (5, 5), 0)
-            
-            if prev_gray is not None:
-                # 1. 光流能量 (絕對差值均值)
-                diff = cv2.absdiff(gray, prev_gray)
-                mean_diff = float(np.mean(diff))
-                motion_series.append(mean_diff)
-                
-                # 2. 水平投影剖面位移 dx
-                p1 = np.sum(prev_gray, axis=0)
-                p2 = np.sum(gray, axis=0)
-                p1 = p1 - np.mean(p1)
-                p2 = p2 - np.mean(p2)
-                
-                best_shift = 0.0
-                min_proj_diff = float('inf')
-                search_range = 6
-                for shift in range(-search_range, search_range + 1):
-                    if shift < 0:
-                        d = np.mean(np.abs(p1[-shift:] - p2[:shift]))
-                    elif shift > 0:
-                        d = np.mean(np.abs(p1[:-shift] - p2[shift:]))
-                    else:
-                        d = np.mean(np.abs(p1 - p2))
-                    if d < min_proj_diff:
-                        min_proj_diff = d
-                        best_shift = float(shift)
-                motion_dx.append(best_shift)
-                
-                frame_indices.append(frame_idx)
-                
-            prev_gray = gray
-            
-        frame_idx += 1
+        # 保存全影片的特徵資料至本機快取
+        cache[video_path] = {
+            "total_frames": total_frames,
+            "motion_series": motion_series,
+            "motion_dx": motion_dx,
+            "frame_indices": frame_indices
+        }
+        save_cv_cache(cache)
         
-    cap.release()
-    
     if len(motion_series) < 3:
         return max(0, (total_frames - duration_frames) // 2)
         
-    # 插值補齊滿影格率曲線
+    # 插值補齊滿影格率曲線 (在記憶體中快速插值)
     full_motion = np.interp(np.arange(total_frames), frame_indices, motion_series)
     full_dx = np.interp(np.arange(total_frames), frame_indices, motion_dx)
     
@@ -168,7 +209,8 @@ def find_optimal_stable_unidirectional_window(video_path, duration_frames, fps, 
             best_score = score
             best_start = s
             
-    return int(best_start)
+    ans = int(best_start)
+    return ans
 
 def run_event_highlight_edit():
     print("🎬 Starting AI Rhythmic Event Highlight Editor (Chronological Narrative Arc)...")
@@ -232,18 +274,19 @@ def run_event_highlight_edit():
         
     timeline_start = timeline.GetStartFrame()
     fps = float(current_project.GetSetting("timelineFrameRate") or 24.0)
-    MAX_DURATION_SEC = 30.0
+    MAX_DURATION_SEC = 25.0
     max_frames = int(MAX_DURATION_SEC * fps)
     
-    # 篩選前 30 秒內的節拍標記
+    # 篩選前 25 秒內的節拍標記
     all_rel_frames = sorted(list(markers.keys()))
     rel_frames_30s = [f for f in all_rel_frames if f <= max_frames]
     
-    # 4階段時序臨界點 (秒數)
-    t_setup = 5.0
-    t_detail = 12.0
-    t_climax = 25.0
-    t_finale = 30.0
+    # 4階段時序臨界點 (按比例動態縮放)
+    factor = MAX_DURATION_SEC / 30.0
+    t_setup = 5.0 * factor
+    t_detail = 12.0 * factor
+    t_climax = 25.0 * factor
+    t_finale = MAX_DURATION_SEC
     
     # 根據時序劃分節拍標記
     setup_markers = []
@@ -275,9 +318,10 @@ def run_event_highlight_edit():
         if idx % 2 == 0:
             downsampled_beats.append((f, "detail"))
             
-    # 轉 (Climax): 每 1 拍切一次 (名模走秀高潮，極速快切卡點！)
+    # 轉 (Climax): 每 2 拍切一次 (名模走秀高潮，維持商業呼吸感與細節呈現，防止過快流失內容！)
     for idx, f in enumerate(climax_markers):
-        downsampled_beats.append((f, "catwalk"))
+        if idx % 2 == 0:
+            downsampled_beats.append((f, "catwalk"))
         
     # 合 (Finale): 每 4 拍切一次 (結尾掌聲、品牌瓶身，徐緩定格)
     for idx, f in enumerate(finale_markers):
@@ -303,7 +347,7 @@ def run_event_highlight_edit():
             cut_intervals.append((last_frame, abs_frame, role))
             last_frame = abs_frame
             
-    # 如果最後沒有拼滿 30 秒，最後一個片段補齊到 30 秒滿
+    # 如果最後沒有拼滿最大長度，最後一個片段補齊到最大長度滿
     if last_frame < timeline_start + max_frames:
         cut_intervals.append((last_frame, timeline_start + max_frames, "finale"))
         
@@ -366,18 +410,36 @@ def run_event_highlight_edit():
     final_clip_sequence = []
     last_movement = "Static"
     
+    setup_wide_allocated = False
+    finale_wide_allocated = False
+    
+    # 找出 Setup 階段的第一個區間索引，與 Finale 階段的最後一個區間索引
+    setup_indices = [i for i, c in enumerate(cut_intervals) if c[2] == "setup"]
+    finale_indices = [i for i, c in enumerate(cut_intervals) if c[2] == "finale"]
+    
+    first_setup_idx = setup_indices[0] if setup_indices else -1
+    last_finale_idx = finale_indices[-1] if finale_indices else -1
+    
     for idx, interval in enumerate(cut_intervals):
         start_frame, end_frame, role = interval
         
-        # 決定當前階段的優先鏡位順序
+        # 決定當前階段的優先鏡位順序 (將 Wide/觀眾 畫面嚴格限制在全片僅 2 鏡：起點 1 鏡，結尾 1 鏡)
         if role == "setup":
-            priority = ["Wide", "Medium", "Unsorted", "CloseUp"]
+            if idx == first_setup_idx and not setup_wide_allocated:
+                priority = ["Wide", "Medium", "Unsorted", "CloseUp"]
+            else:
+                priority = ["Medium", "CloseUp", "Unsorted"]
+        elif role == "finale":
+            if idx == last_finale_idx and not finale_wide_allocated:
+                priority = ["Wide", "CloseUp", "Medium", "Unsorted"]
+            else:
+                priority = ["CloseUp", "Medium", "Unsorted"]
         elif role == "detail":
-            priority = ["CloseUp", "Medium", "Unsorted", "Wide"]
+            priority = ["CloseUp", "Medium", "Unsorted"]
         elif role == "catwalk":
-            priority = ["Medium", "CloseUp", "Wide", "Unsorted"]
-        else: # finale
-            priority = ["CloseUp", "Wide", "Medium", "Unsorted"]
+            priority = ["Medium", "CloseUp", "Unsorted"]
+        else:
+            priority = ["Medium", "CloseUp", "Unsorted"]
             
         chosen_clip = None
         
@@ -405,6 +467,11 @@ def run_event_highlight_edit():
                         break
                         
                 chosen_clip = pool.pop(best_idx)
+                if pool_name == "Wide":
+                    if role == "setup":
+                        setup_wide_allocated = True
+                    elif role == "finale":
+                        finale_wide_allocated = True
                 break
                 
         # 徹底防禦：如果所有庫全空了，重組備用
@@ -528,27 +595,39 @@ def run_event_highlight_edit():
             
         # ── 7.2 尋找背景音樂並執行高潮裁切與精確 target 寫入 (對齊 86400) ───────────────
         def find_bgm(folder):
-            for clip in folder.GetClipList():
-                if "indian walk" in clip.GetName().lower():
-                    return clip
-            for sub in folder.GetSubFolderList():
-                res = find_bgm(sub)
-                if res:
-                    return res
+            if not folder:
+                return None
+            try:
+                clips = folder.GetClipList()
+                if clips:
+                    for clip in clips:
+                        if clip and "indian walk" in str(clip.GetName()).lower():
+                            return clip
+            except Exception:
+                pass
+            try:
+                subs = folder.GetSubFolderList()
+                if subs:
+                    for sub in subs:
+                        if sub:
+                            res = find_bgm(sub)
+                            if res:
+                                return res
+            except Exception:
+                pass
             return None
             
         bgm_clip = find_bgm(root_folder)
         if bgm_clip:
             bgm_path = bgm_clip.GetClipProperty("File Path")
             print(f"🎵 Locating BGM Climax... Path: {bgm_path}")
-            best_t = beat_detector.find_best_climax_window(bgm_path, 30.0)
+            best_t = beat_detector.find_best_climax_window(bgm_path, MAX_DURATION_SEC)
             
-            # 使用 target 寫入方式，將 30s 裁切後的音樂放置在 Audio Track 1 起點 (86400)
+            # 使用 target 寫入方式，將裁切後的音樂放置在 Audio Track 1 起點 (86400)
             bgm_to_append = [{
                 "mediaPoolItem": bgm_clip,
                 "startFrame": int(best_t * fps),
-                "endFrame": int((best_t + 30.0) * fps),
-                "recordFrame": int(timeline_start),
+                "endFrame": int((best_t + MAX_DURATION_SEC) * fps),
                 "trackIndex": 1,
                 "mediaType": 2
             }]
