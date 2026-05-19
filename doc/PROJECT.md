@@ -98,6 +98,62 @@ This project is a high-performance **AI-powered rhythmic video editor** that int
 
 ---
 
+## 🎬 Advanced Cinematic Editing Techniques & AI Integration Guide
+
+To break away from simple linear cuts, this editing system abstracts industry-standard cinematic editing techniques into algorithmic models that can be programmatically compiled via the DaVinci Resolve API. Below is the catalog of supported techniques and their exact integration mechanics:
+
+### 1. J-Cuts & L-Cuts (Audio-Video Offset Transitions)
+* **Definition**: Letting the audio from the next clip bleed in early before the visual cut (J-Cut, "hear it first"), or letting the audio from the current clip linger while the visual already switched to the next clip (L-Cut, "visual transition").
+* **AI Algorithmic Integration**:
+  * In DaVinci Resolve, Video and Audio tracks are separate entities during `AppendToTimeline`.
+  * **J-Cut**: Shift the Audio Track's `startFrame` to the left (`startFrame = startFrame - offset_frames`, typically 5-10 frames) while keeping the Video Track's start frame snapped to the beat point.
+  * **L-Cut**: Extend the previous clip's Audio Clip end frame into the next visual scene while cutting the video track early.
+
+### 2. Match Cuts (Compositional & Kinetic Matching)
+* **Definition**: Seamlessly transitioning between two consecutive shots that share similar motion direction, camera speeds, or visual frame compositions.
+* **AI Algorithmic Integration**:
+  * **Kinetic Match (Motion Match)**: Query the `.cv_profile_cache.json` for motion vectors of adjacent candidate clips. If Clip A ends with a pan right ($dx > 0$), force the selector to only pick Clip B that starts with a pan right ($dx > 0$) for a fluid kinetic sweep.
+  * **Graphic Match (Compositional Match)**: Extract high-dimensional CLIP vectors of keyframes from consecutive candidate clips. Select adjacent clips that maximize cosine similarity on visual layouts (e.g., both having a circular object centered in the frame), producing a smooth transition.
+
+### 3. Speed Ramping (Dynamic Time Remapping)
+* **Definition**: Varying clip playback speeds dynamically within a single cut (e.g. Fast ➡️ Slow-Motion ➡️ Fast-Cut) to emphasize motion climax or model rotations.
+* **AI Algorithmic Integration**:
+  * Call Resolve API's `timelineItem.SetClipSpeed(speed, true)` or generate Retime speed points dynamically.
+  * Identify high-motion segments of the clip (via rolling variance Peaks). Speed up the introduction to `200%`, ramp down the climax action to `50%` to savor details, and pull back to `100%` before the cut.
+
+### 4. Jump Cuts (Temporal Discontinuity Editing)
+* **Definition**: Deliberately jumping forward in time within the same scene/camera setup, creating a high-fashion, staccato effect of sudden subject shifts.
+* **AI Algorithmic Integration**:
+  * Extract a sequence of non-continuous sub-windows from a single raw take:
+    $$\text{Cut}_n = [s + n \times (D + G), s + n \times (D + G) + D]$$
+    (where $D$ is the cut duration, and $G$ is the skipped frame Gap).
+  * Align and append these sub-windows continuously on the timeline, generating a stylized staccato progression.
+
+### 5. Parallel Editing / Cross-Cutting (Narrative Interleaving)
+* **Definition**: Interleaving two or more separate narrative threads occurring simultaneously in different spaces to show contrast or build suspense.
+* **AI Algorithmic Integration**:
+  * Partition the raw asset pool into distinct semantic categories (e.g., Category A for runway actions, Category B for backstage context).
+  * Interleave them dynamically inside the timeline builder loop:
+    $$\text{TargetCategory} = \text{Category A} \text{ if } (idx \pmod 2 == 0) \text{ else } \text{Category B}$$
+    creating a perfectly interleaved narrative weave (`A ➡️ B ➡️ A ➡️ B`).
+
+### 6. Split Screen (Multi-Window Symmetrical Layouts)
+* **Definition**: Splitting the screen layout to display multiple video clips simultaneously.
+* **AI Algorithmic Integration**:
+  * Append multiple clips on the same timeline index across **Video Track 1 & Video Track 2**.
+  * Use `timelineItem.SetProperty()` to dynamically offset geometry:
+    * Left Clip (Track 1): `ZoomX = 0.5`, `ZoomY = 1.0`, `PanX = -480.0`
+    * Right Clip (Track 2): `ZoomX = 0.5`, `ZoomY = 1.0`, `PanX = 480.0`
+    This renders a perfectly balanced side-by-side vertical split-screen on a 1920x1080 canvas.
+
+### 7. Association Montages (High-Density Collage Flash)
+* **Definition**: Running a series of extremely fast closeups to build visual associations during a dramatic build-up or micro-beats.
+* **AI Algorithmic Integration**:
+  * Detect 32nd notes or rolling snare-roll drum sequences in the audio.
+  * Compress the timeline cut duration down to **3-5 frames** and compile 5-8 ultra-fast macro closeups (`CloseUp`), creating a premium flash montage.
+
+---
+
 ## 🤖 AI Rhythmic Editor System Prompt (Boot Commands)
 
 When the user (Editing Director) sends you (AI Assistant) a command in the following format:
