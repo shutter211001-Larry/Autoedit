@@ -639,6 +639,129 @@ def run_event_highlight_edit():
         else:
             print("❌ Error: BGM 'Indian Walk' not found in Media Pool.")
             
+        # ── 7.3 置入 BC 施華蔻品牌 LOGO (Video Track 2 & 3 - Finale 段落) ─────────────
+        print("\n🖼️ Step 7.3: Overlaying BC & Schwarzkopf Logos on Video Track 2 & 3...")
+        
+        bc_logo_path = r"G:\共用雲端硬碟\專業髮品\04影音部\Larry\Schwarzkopf\2605_BCBonacure\活動影片\BC_2018_LOGO00000001.jpg"
+        skp_logo_path = r"G:\共用雲端硬碟\專業髮品\04影音部\Larry\Schwarzkopf\2605_BCBonacure\活動影片\SKP_Logo_schwarz00000001.jpg"
+        
+        # 1. 確保時間軸至少有 3 個視訊軌
+        video_track_count = timeline.GetTrackCount("video")
+        while video_track_count < 3:
+            timeline.AddTrack("video")
+            video_track_count = timeline.GetTrackCount("video")
+            
+        # 2. 清理 Video Track 2 與 3 的舊有 Logo (保證乾淨覆蓋)
+        for t_idx in [2, 3]:
+            try:
+                old_logo_items = timeline.GetItemListInTrack("video", t_idx)
+                if old_logo_items:
+                    print(f"   🧹 Clearing old items on Video Track {t_idx}...")
+                    timeline.DeleteClips(old_logo_items)
+            except Exception as e:
+                print(f"   Note: Clear Video Track {t_idx} failed: {e}")
+                
+        # 3. 尋找與導入 LOGO 素材
+        def find_clip_by_name(folder, query):
+            if not folder:
+                return None
+            try:
+                clips = folder.GetClipList()
+                if clips:
+                    for clip in clips:
+                        if clip and query.lower() in str(clip.GetName()).lower():
+                            return clip
+            except Exception:
+                pass
+            try:
+                subs = folder.GetSubFolderList()
+                if subs:
+                    for sub in subs:
+                        if sub:
+                            res = find_clip_by_name(sub, query)
+                            if res:
+                                return res
+            except Exception:
+                pass
+            return None
+
+        bc_logo_clip = find_clip_by_name(media_pool.GetRootFolder(), "BC_2018_LOGO")
+        if not bc_logo_clip:
+            if os.path.exists(bc_logo_path):
+                print(f"   📥 Importing BC Logo into Media Pool: {os.path.basename(bc_logo_path)}...")
+                imported = media_pool.ImportMedia([bc_logo_path])
+                if imported:
+                    bc_logo_clip = imported[0]
+                    
+        skp_logo_clip = find_clip_by_name(media_pool.GetRootFolder(), "SKP_Logo_schwarz00000001")
+        if not skp_logo_clip:
+            if os.path.exists(skp_logo_path):
+                print(f"   📥 Importing SKP Logo into Media Pool: {os.path.basename(skp_logo_path)}...")
+                imported = media_pool.ImportMedia([skp_logo_path])
+                if imported:
+                    skp_logo_clip = imported[0]
+
+        # 4. 定位 Finale 的起點影格並進行 Target Append
+        logo_start_frame = None
+        for interval in cut_intervals:
+            start_f, end_f, role = interval
+            if role == "finale":
+                logo_start_frame = start_f
+                break
+        if logo_start_frame is None:
+            logo_start_frame = timeline_start + int(20.8 * fps)
+            
+        logo_end_frame = timeline_start + total_duration_frames
+        logo_duration = logo_end_frame - logo_start_frame
+
+        if bc_logo_clip and skp_logo_clip:
+            logos_to_append = [
+                {
+                    "mediaPoolItem": bc_logo_clip,
+                    "startFrame": 0,
+                    "endFrame": int(logo_duration),
+                    "recordFrame": int(logo_start_frame),
+                    "trackIndex": 2,
+                    "mediaType": 1
+                },
+                {
+                    "mediaPoolItem": skp_logo_clip,
+                    "startFrame": 0,
+                    "endFrame": int(logo_duration),
+                    "recordFrame": int(logo_start_frame),
+                    "trackIndex": 3,
+                    "mediaType": 1
+                }
+            ]
+            appended_logos = media_pool.AppendToTimeline(logos_to_append)
+            if appended_logos:
+                print("   🎉 SUCCESS: BC & Schwarzkopf Logos appended to Video Track 2 & 3!")
+                
+                # ── 7.4 設定 LOGO 的大小 (Zoom) 與位置 (Pan/Tilt) ─────────────────────────
+                time.sleep(0.5)
+                logo_items_v2 = timeline.GetItemListInTrack("video", 2)
+                logo_items_v3 = timeline.GetItemListInTrack("video", 3)
+                
+                if logo_items_v2:
+                    bc_item = logo_items_v2[0]
+                    bc_item.SetProperty("ZoomX", 0.35)
+                    bc_item.SetProperty("ZoomY", 0.35)
+                    bc_item.SetProperty("Pan", -260.0)
+                    bc_item.SetProperty("Tilt", -50.0)
+                    print("   ✅ Configured BC Logo position: Zoom=0.35, Pan=-260, Tilt=-50")
+                    
+                if logo_items_v3:
+                    skp_item = logo_items_v3[0]
+                    skp_item.SetProperty("ZoomX", 0.35)
+                    skp_item.SetProperty("ZoomY", 0.35)
+                    skp_item.SetProperty("Pan", 260.0)
+                    skp_item.SetProperty("Tilt", -50.0)
+                    print("   ✅ Configured Schwarzkopf Logo position: Zoom=0.35, Pan=260, Tilt=-50")
+            else:
+                print("   ❌ Error: Append to timeline failed for logos.")
+        else:
+            print("   ❌ Error: BC Logo or SKP Logo files not found or could not be loaded.")
+            
         # ── 8. AI 鏡頭動態導演 (Transform Scale & Alternating Slash-Cut) ─────────
         print("\n🎥 Step 8: AI Camera Motion Director starting up...")
         placed_clips = timeline.GetItemListInTrack("video", 1)
