@@ -112,11 +112,11 @@ You must immediately act as the **Core Controller** of this editing system, read
 2. **Audio Track (BGM)**:
    * Modify the search keyword in the `find_bgm(folder)` function from `indian walk` to `"{BGM Name}".lower()`.
 3. **Semantics & CLIP Search Prompts**:
-   * Align `{Visual Style}` and `{Focus Object}` to dynamic `semantic_prompts` inside `run_event_highlight_edit.py`:
-     * `"setup"` ➡️ `"{Visual Style} {Focus Object} event venue backstage preparation"`
-     * `"detail"` ➡️ `"{Focus Object} cosmetic closeups styling craftsmanship detail"`
-     * `"catwalk"` ➡️ `"{Focus Object} beautiful fashion model runway catwalk spin movement closeup"`
-     * `"finale"` ➡️ `"{Focus Object} grand finale applause brand packaging logo"`
+   * Align `{Visual Style}` and `{Focus Object}` to decoupled, generic `semantic_prompts` inside the editing engine (e.g. `run_event_highlight_edit.py`) to support any general video theme (Generic Query Expansion):
+     * `"setup"` ➡️ `"{Visual Style} {Focus Object} establishing opening setup background context"`
+     * `"detail"` ➡️ `"{Focus Object} macro closeup details features focus craftsmanship"`
+     * `"catwalk"` ➡️ `"{Focus Object} high energy dynamic action movement climax performance"`
+     * `"finale"` ➡️ `"{Focus Object} grand finale outro logo branding packaging presentation end"`
 
 ### ⚡ 2. Cache & GUI Focus Pre-flight Checks (GUI Sync Gotcha)
 1. **Motion Profile Cache Check**:
