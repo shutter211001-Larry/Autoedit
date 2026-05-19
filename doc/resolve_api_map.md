@@ -371,3 +371,15 @@ DaVinci Resolve 21 API 方法探索報告
 
 
 
+
+### Gotcha #15: AppendToTimeline 順序拼接與已有內容之時間軸起點對齊天坑 (Append Alignment Landmine)
+* **問題描述**：
+  In Resolve API 中，使用最穩定的「順序追加 (Sequential Append)」時（即在 `AppendToTimeline` 的傳入字典中**完全不指定 `recordFrame`**），Resolve 會預設將素材拼接至**當前時間軸內容的末尾 (Current End of Timeline)**。
+  若此時時間軸上**已先被放了背景音樂 (BGM)**（例如一個 30 秒的音樂剪接），此時時間軸的「末尾」就已經被延伸到了第 30 秒。接下來順序拼接影片片段時，Resolve 會把所有影片片段**強行塞到第 30 秒（第 `87120` 影格）之後**！
+  這會造成極為嚴重的錯位：前 30 秒是黑畫面+音樂，後 30 秒是影片+無音樂，音畫完全不同步！
+* **解決方案**：
+  採用**「空時間軸靶向定位工作流 (Empty-Timeline Targeted Workflow）」**，確保 100% 影格級音畫無縫對齊：
+  1. **完全清空軌道**：在 Append 之前，利用 `timeline.DeleteClips` 將所有 Video 軌與 Audio 軌徹底刪空，將時間軸物理起點歸零。
+  2. **順序拼接影片**：在時間軸全空的情況下，直接執行順序拼接（不傳入 `recordFrame`），此時影片會 100% 從時間軸的最開端（第 `86400` 影格）開始 contiguously 排版。
+  3. **清除相機現場音**：清空隨著影片追加自動生成在 Audio Track 1 上的影片現場雜音。
+  4. **音樂靶向追加**：定位背景音樂素材，使用 **Target Append 模式**（即傳入字典中包含 `"recordFrame": timeline_start`, `"trackIndex": 1`, `"mediaType": 2`），強行將 30 秒 BGM 置入音軌 1 起點（`86400`），完美對齊影片！
