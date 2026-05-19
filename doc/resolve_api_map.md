@@ -348,11 +348,11 @@ DaVinci Resolve 21 API 方法探索報告
 * **大師級工作流解決方案**：
   1. **快切交替卡點擺動 (Alternating Angle Sway)**：
      在極為短暫的卡點段落（如 0.25 秒一鏡），透過腳本為相鄰鏡頭交替寫入正負角度的傾斜屬性（如 `RotationAngle = 4.0` 與 `-4.0`）。雖然每鏡內部是靜態的，但隨著高頻率的剪點切換，在重拍播放時會產生極強的手持晃動卡點視覺！
-  2. **調整圖層不透明度漸變推拉大法 (Adjustment Clip Opacity-Ramped Smooth Push-Pull Hack)**：
-     - **核心機制**：為打破無法在編輯頁寫入 `Zoom` 關鍵影格的限制，在目標影片上方軌道（如 V2）放置一個**調整圖層（Adjustment Clip）**。
-     - **設定幾何縮放**：對調整圖層套用目標縮放比率，例如 `adjustment_item.SetProperty("ZoomX", 1.20)` 與 `adjustment_item.SetProperty("ZoomY", 1.20)`。
-     - **套用 API 淡入淡出**：由於 API 原生支持對 Clip 套用淡入淡出，我們直接呼叫 `adjustment_item.SetProperty("FadeInFrames", 24)` 與 `FadeOutFrames`。
-     - **運作成效**：當時間軸播放時，該調整圖層的 Opacity (不透明度) 會從 0.0 平滑漸變至 1.0。因為調整圖層會對下方影片套用 $1.2\times$ 縮放，不透明度的漸變會在視覺上產生極為流暢、完美的 **$1.0\times$ 到 $1.2\times$ 平滑推拉效果 (Dynamic Ken Burns)**！全程 100% 透過 Python API 自動化完成！
+  2. **全通道調整圖層不透明度漸變插值算法 (Multi-axis Adjustment Clip Opacity-Ramped Transform Hack)**：
+     - **核心機制**：為打破編輯頁面無法寫入變形關鍵影格的限制，在目標影片上方軌道（如 V2）放置一個**調整圖層（Adjustment Clip）**。
+     - **設定幾何參數**：在調整圖層上，可同時寫入多軸的靜態變形目標值，如 `ZoomX`/`ZoomY` (縮放), `Pan`/`Tilt` (平移), `RotationAngle` (旋轉), `Pitch`/`Yaw` (3D透視)。
+     - **套用 API 淡入淡出**：直接在調整圖層調用原生 API 的 `adjustment_item.SetProperty("FadeInFrames", 24)` 與 `FadeOutFrames`。
+     - **運作成效**：當不透明度（Opacity）從 0% 到 100% 漸變時，系統會自動在底層對**所有變形通道**進行完美的線性插值！例如同時設定 `Zoom = 1.20`, `PanY = -60`, `RotationAngle = 2.0` 時，淡入漸變會自動融合出「邊推近、邊上移、邊微轉」的**電影級多軸複合運鏡（Hollywood-style Composite Camera Move）**！100% 透過 Python API 在背景無人自動化完成！
 
 ### Gotcha #14: 達芬奇 CopyGrades API 限制與調色師一秒瞬抄神技
 * **問題描述**：

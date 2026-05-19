@@ -94,15 +94,15 @@ graph TD
 
 ---
 
-## 🎥 第七階段：鏡頭導演包裝與大師級平滑推拉 (AI Camera Directing & Dynamic Zoom Hack)
-為解決達芬奇 Python API 無法在 Edit 頁面寫入動態關鍵影格（Keyframe）的限制，本系統引入了極其巧妙的 **「調整圖層不透明度漸變推拉算法 (Adjustment Clip Opacity-Ramped Smooth Push-Pull Hack)」**：
-1. **起承轉合 4 階段幾何包裝**：
-   * **【起】Setup**：`Zoom = 1.0`, `Rotation = 0.0`（大器開場）。
-   * **【承】Detail**：覆蓋微推調整圖層（`Zoom = 1.08`），API 注入 `FadeInFrames = 24`（1秒），在播放時使底層畫面平滑推近。
-   * **【轉】Catwalk**：`Zoom = 1.12`, `Rotation = ±3.5°`（奇偶剪點交替左右擺動，產生激烈時尚手持卡點搖晃感）。
-   * **【合】Finale**：覆蓋定格調整圖層（`Zoom = 1.2`），API 注入 `FadeInFrames = 30`（1.25秒），隨著不透明度由 0% 平滑拉升至 100%，將下方畫面完美且極致平滑地從 $1.0\times$ 漸進放大至 $1.2\times$。
+## 🎥 第七階段：鏡頭導演包裝與全通道多軸動態運鏡 (AI Camera Directing & Multi-axis Transform Hack)
+為解決達芬奇 Python API 無法在 Edit 頁面寫入動態關鍵影格（Keyframe）的限制，本系統引入了業內天花板級的 **「全通道調整圖層不透明度漸變插值算法 (Multi-axis Adjustment Clip Opacity-Ramped Transform Hack)」**。藉由對調整圖層（Adjustment Clip）寫入靜態變形屬性並套用 API 原生淡入淡出，可完成縮放、平移與旋轉的同步動態插值，實現極致平滑的電影級複合運鏡：
+1. **起承轉合 4 階段幾何運鏡法則**：
+   * **【起】Setup**：`Zoom = 1.0`, `Rotation = 0.0`（穩定平大景）。
+   * **【承】Detail**：覆蓋微推調整圖層（`Zoom = 1.08`），寫入 `FadeInFrames = 24`（1秒），在播放時使底層畫面平滑推近。
+   * **【轉】Catwalk**：覆蓋擺動調整圖層，交替設定靜態 `RotationAngle = 3.5, PanX = 50` 與 `RotationAngle = -3.5, PanX = -50`，並注入 `FadeInFrames = 12, FadeOutFrames = 12`。隨著重拍鼓點快速淡入淡出，畫面會呈現極具時尚震撼力、滑動無縫的手持呼吸卡點！
+   * **【合】Finale**：覆蓋複合調整圖層，**同時設定** `Zoom = 1.2, PanY = -60` (垂直微調) 與 `RotationAngle = 1.5`，API 注入 `FadeInFrames = 30` (1.25秒)，隨著不透明度由 0% 平滑漸變至 100%，畫面會以「邊推近、邊上移、邊微轉」的多軸複合運鏡，達成極致奢華的電影級定格收尾。
 2. **無感背景自動化編譯**：
-   此方案完全不需要使用者手動點擊 GUI 檢查器，所有調整圖層的建立、軌道放置、靜態縮放設定（`ZoomX`/`ZoomY`）以及淡入淡出數值（`FadeInFrames`/`FadeOutFrames`）均 100% 透過 Python API 在背景無聲完成，堪稱完美的電影級推拉 Workaround！
+   此方案完全不需要使用者手動點擊 GUI 檢查器，所有調整圖層的建立、軌道放置、全通道幾何屬性設定以及淡入淡出數值均 100% 透過 Python API 在背景無聲完成，堪稱完美的電影級推拉、搖鏡與旋轉 Workaround！
 
 ---
 

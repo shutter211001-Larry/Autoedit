@@ -8,12 +8,12 @@ This project is a high-performance **AI-powered rhythmic video editor** that int
 ## 🌟 Key Features & Algorithmic Architectures
 
 ### 1. AI Camera Motion Director
-* **4-Phase Narrative Transforming & Master-class Smooth Zoom**:
-  To bypass Resolve's scripting API limitation which blocks writing dynamic transform keyframes in the Edit page, the system implements an industry-grade **"Adjustment Clip Opacity-Ramped Smooth Push-Pull Hack"** to achieve 100% automated background dynamic zooms:
-  1. **【Setup】0s - 5s (Establishing)**: Stable opening. `Zoom = 1.0`.
-  2. **【Detail】5s - 12s (Craftsmanship)**: Smooth micro-push. Places an Adjustment Clip on Video Track 2, sets static `Zoom = 1.08`, and calls API to apply `FadeInFrames = 24` to smoothly push the scale forward.
-  3. **【Catwalk Climax】12s - 20.8s (Runway Spins)**: Symmetrical sway. Calls `SetProperty("RotationAngle", ±3.5)` alternately on odd/even beat points to create a rhythmic hand-held shake.
-  4. **【Finale】20.8s - 25.0s (Brand Reveal)**: Master-class final push. Overlays a `Zoom = 1.2` Adjustment Clip with `FadeInFrames = 30` (1.25s), letting opacity smoothly ramp from 0% to 100% to seamlessly scale all underlying footage from **1.0x up to 1.2x**, providing a luxurious static breathing outro.
+* **4-Phase Narrative Transforming & Master-class Multi-axis Zoom/Pan/Rotation Hack**:
+  To bypass Resolve's scripting API limitation which blocks writing dynamic transform keyframes in the Edit page, the system implements an industry-grade **"Multi-axis Adjustment Clip Opacity-Ramped Transform Hack"** to achieve 100% automated background multi-axis moves. By placing an Adjustment Clip on Video Track 2, setting static Zoom, Pan/Tilt, or RotationAngle, and calling API to write Fade-In/Out frames, we produce complex Hollywood-grade multi-axis movements (Push + Pan + Rotate) seamlessly:
+  1. **【Setup】0s - 5s (Establishing)**: Stable atmosphere. `Zoom = 1.0`, `Rotation = 0.0`.
+  2. **【Detail】5s - 12s (Craftsmanship)**: Smooth dynamic micro-push. Overlays an Adjustment Clip on Track 2, sets static `Zoom = 1.08`, and calls API to apply `FadeInFrames = 24` to smoothly push the scale forward.
+  3. **【Catwalk Climax】12s - 20.8s (Runway Spins)**: Dynamic kinetic sway. Overlays Adjustment Clips on V2 alternating between static `RotationAngle = 3.5`, `PanX = 50` and `RotationAngle = -3.5`, `PanX = -50` with `FadeInFrames = 12` and `FadeOutFrames = 12` to trigger intense dynamic handheld action sweeps snapped to beats.
+  4. **【Finale】20.8s - 25.0s (Brand Reveal)**: Master-class multi-axis outro. Places an Adjustment Clip on V2, **simultaneously writing** static `Zoom = 1.2`, `PanY = -60` (vertical tilt), and `RotationAngle = 1.5`, and calls `FadeInFrames = 30` (1.25s), producing a smooth, high-end composite push-up-and-tilt conclusion.
 
 ### 2. Motion Flow Smoothing & Envelope Protection
 * **Motion Envelope**: Applies a **5-beat Moving Average Filter** to smooth the raw motion energy curve into a gentle, flowing sinusoidal wave.
