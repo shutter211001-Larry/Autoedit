@@ -348,11 +348,11 @@ DaVinci Resolve 21 API 方法探索報告
 * **大師級工作流解決方案**：
   1. **快切交替卡點擺動 (Alternating Angle Sway)**：
      在極為短暫的卡點段落（如 0.25 秒一鏡），透過腳本為相鄰鏡頭交替寫入正負角度的傾斜屬性（如 `RotationAngle = 4.0` 與 `-4.0`）。雖然每鏡內部是靜態的，但隨著高頻率的剪點切換，在重拍播放時會產生極強的手持晃動卡點視覺！
-  2. **一秒點亮內建動態縮放 (Dynamic Zoom Toggle)**：
-     如果需要每個影片在播放時都具有平滑推近/推遠的動態感，最完美的混合工作流為：
-     - 利用腳本自動完成完美的「音樂鼓點剪接、去大抖動與近重複防禦」並對齊時間軸。
-     - 剪接完成後，在達芬奇中按下 `Ctrl + A` 全選所有片段。
-     - 在右上角「檢查器 (Inspector)」將 **「動態縮放 (Dynamic Zoom)」** 開關直接點亮（啟用）。達芬奇會瞬間自動為所有片段套用無縫的推拉動畫，配合精準剪接，視覺效果震撼無比！
+  2. **調整圖層不透明度漸變推拉大法 (Adjustment Clip Opacity-Ramped Smooth Push-Pull Hack)**：
+     - **核心機制**：為打破無法在編輯頁寫入 `Zoom` 關鍵影格的限制，在目標影片上方軌道（如 V2）放置一個**調整圖層（Adjustment Clip）**。
+     - **設定幾何縮放**：對調整圖層套用目標縮放比率，例如 `adjustment_item.SetProperty("ZoomX", 1.20)` 與 `adjustment_item.SetProperty("ZoomY", 1.20)`。
+     - **套用 API 淡入淡出**：由於 API 原生支持對 Clip 套用淡入淡出，我們直接呼叫 `adjustment_item.SetProperty("FadeInFrames", 24)` 與 `FadeOutFrames`。
+     - **運作成效**：當時間軸播放時，該調整圖層的 Opacity (不透明度) 會從 0.0 平滑漸變至 1.0。因為調整圖層會對下方影片套用 $1.2\times$ 縮放，不透明度的漸變會在視覺上產生極為流暢、完美的 **$1.0\times$ 到 $1.2\times$ 平滑推拉效果 (Dynamic Ken Burns)**！全程 100% 透過 Python API 自動化完成！
 
 ### Gotcha #14: 達芬奇 CopyGrades API 限制與調色師一秒瞬抄神技
 * **問題描述**：

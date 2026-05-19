@@ -8,12 +8,12 @@ This project is a high-performance **AI-powered rhythmic video editor** that int
 ## 🌟 Key Features & Algorithmic Architectures
 
 ### 1. AI Camera Motion Director
-* **Narrative 4-Phase Transform Packaging Model**: Leverages the Resolve API `SetProperty()` to layer dynamic zoom and rotation values on top of cuts:
-  1. **【Setup】0s - 5s (Establishing & Backstage)**: Flat stable atmosphere. Holds `Zoom = 1.0`, `Rotation = 0.0`.
-  2. **【Detail】5s - 12s (Hair Styling & Product Closeups)**: Dynamic push-in. Applies `Zoom = 1.05`, `Rotation = 0.0` to lock visual attention on craftsmanship.
-  3. **【Catwalk Climax】12s - 20.8s (Runway Showcase & Spins)**: Alternating slash-cut. Amplifies visuals with `Zoom = 1.12` and applies **alternating tilt angles of `3.5°` and `-3.5°`** on beat points, generating an intense hand-held rhythmic slam effect.
-  4. **【Finale】20.8s - 25.0s (Applauding & Brand Reveal)**: Outro focus. Applies `Zoom = 1.18`, `Rotation = 0.0` to highlight brand packaging and applause.
-* **Instant Dynamic Zoom (Ken Burns)**: Select all clips (`Ctrl + A`) in the edit viewport and toggle **"Dynamic Zoom"** in the Inspector to combine rhythmic cuts with premium camera push-pull movements.
+* **4-Phase Narrative Transforming & Master-class Smooth Zoom**:
+  To bypass Resolve's scripting API limitation which blocks writing dynamic transform keyframes in the Edit page, the system implements an industry-grade **"Adjustment Clip Opacity-Ramped Smooth Push-Pull Hack"** to achieve 100% automated background dynamic zooms:
+  1. **【Setup】0s - 5s (Establishing)**: Stable opening. `Zoom = 1.0`.
+  2. **【Detail】5s - 12s (Craftsmanship)**: Smooth micro-push. Places an Adjustment Clip on Video Track 2, sets static `Zoom = 1.08`, and calls API to apply `FadeInFrames = 24` to smoothly push the scale forward.
+  3. **【Catwalk Climax】12s - 20.8s (Runway Spins)**: Symmetrical sway. Calls `SetProperty("RotationAngle", ±3.5)` alternately on odd/even beat points to create a rhythmic hand-held shake.
+  4. **【Finale】20.8s - 25.0s (Brand Reveal)**: Master-class final push. Overlays a `Zoom = 1.2` Adjustment Clip with `FadeInFrames = 30` (1.25s), letting opacity smoothly ramp from 0% to 100% to seamlessly scale all underlying footage from **1.0x up to 1.2x**, providing a luxurious static breathing outro.
 
 ### 2. Motion Flow Smoothing & Envelope Protection
 * **Motion Envelope**: Applies a **5-beat Moving Average Filter** to smooth the raw motion energy curve into a gentle, flowing sinusoidal wave.
