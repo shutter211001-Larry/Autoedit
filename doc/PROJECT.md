@@ -1,135 +1,143 @@
 # DaVinci Resolve 21 AI Automated Rhythmic Cinematic Editor
 ## 📘 Project Blueprint & Developer Reference
 
-This project is a high-performance **AI-powered rhythmic video editor** that interfaces directly with **DaVinci Resolve 21** via its Python API. It automatically cuts raw footage to the beats of a background music track, resolving critical editing challenges such as cross-framerate rendering phase differences, DSP analysis latencies, timeline cropping offsets, storytelling continuity, camera shakes, and visual dynamic flow.
+This project is a high-performance **AI-powered rhythmic video editor** that interfaces directly with **DaVinci Resolve 21** via its Python API. It automatically cuts raw footage to the beats of a background music track, resolving critical editing challenges such as cross-framerate rendering phase differences, DSP analysis latencies, timeline cropping offsets, hand-held camera jitters, horizontal motion direction reversals, and professional brand outro packaging.
 
 ---
 
-## 🌟 Key Features & Accomplishments
+## 🌟 Key Features & Algorithmic Architectures
 
-### 1. AI Camera Motion Director (AI 鏡頭動態導演)
-* Programmed an automated camera director that modifies scale and transform properties of each `TimelineItem` on the fly using `SetProperty()`, mapped to our 4 Narrative Phases:
-  1. **Phase 1: 起 (Setup - 0s to 5s)**: **Stable Establishing (全平靜定格)**. Keeps the camera completely clean and stable to establish backstage vibe.
-     * `ZoomX/Y = 1.0`, `RotationAngle = 0.0`.
-  2. **Phase 2: 承 (Detail - 5s to 12s)**: **Product Closeups (產品工藝大幅推近)**. Magnifies product detail shots and styling close-ups to create a highly premium, product-focused commercial look.
-     * `ZoomX/Y = 1.10`, `RotationAngle = 0.0`.
-  3. **Phase 3: 轉 (Climax - 12s to 25s)**: **Handheld Slash-Cut Dynamic Camera (斜切潮流手持對拍卡點)**. Alternates the rotation angle between even and odd beat cuts during the runway show climax to create a rapid, high-fashion dynamic visual sway!
-     * `ZoomX/Y = 1.15` (Slightly zoomed to completely hide any black borders from rotation!).
-     * `RotationAngle = 4.0` (Even cuts) or `-4.0` (Odd cuts) degrees.
-  4. **Phase 4: 合 (Finale - 25s to 30s)**: **Grand Logo Climax Zoom (品牌定格大推近)**. Magnifies final poses and product bottles, pulling the viewer's eye straight onto the Schwarzkopf branding logo.
-     * `ZoomX/Y = 1.20`, `RotationAngle = 0.0`.
-* **Important API Limitation & Workaround (Dynamic Zoom)**:
-  DaVinci Resolve's Python API strictly limits edit-page transform property writes to static values per clip (no keyframing allowed). To get a smooth, continuous camera zoom animation (Ken Burns) during a clip's playback without creating a single keyframe, simply:
-  1. Select all timeline clips (`Ctrl + A`).
-  2. Toggle on the **`Dynamic Zoom`** switch in the DaVinci Resolve **Inspector (右上角檢查器)**.
-  This instantly applies seamless continuous push/pull motions on top of our AI's pre-arranged precise beats!
+### 1. AI Camera Motion Director
+* **Narrative 4-Phase Transform Packaging Model**: Leverages the Resolve API `SetProperty()` to layer dynamic zoom and rotation values on top of cuts:
+  1. **【Setup】0s - 5s (Establishing & Backstage)**: Flat stable atmosphere. Holds `Zoom = 1.0`, `Rotation = 0.0`.
+  2. **【Detail】5s - 12s (Hair Styling & Product Closeups)**: Dynamic push-in. Applies `Zoom = 1.05`, `Rotation = 0.0` to lock visual attention on craftsmanship.
+  3. **【Catwalk Climax】12s - 20.8s (Runway Showcase & Spins)**: Alternating slash-cut. Amplifies visuals with `Zoom = 1.12` and applies **alternating tilt angles of `3.5°` and `-3.5°`** on beat points, generating an intense hand-held rhythmic slam effect.
+  4. **【Finale】20.8s - 25.0s (Applauding & Brand Reveal)**: Outro focus. Applies `Zoom = 1.18`, `Rotation = 0.0` to highlight brand packaging and applause.
+* **Instant Dynamic Zoom (Ken Burns)**: Select all clips (`Ctrl + A`) in the edit viewport and toggle **"Dynamic Zoom"** in the Inspector to combine rhythmic cuts with premium camera push-pull movements.
 
-### 2. Motion Flow Smoothing & Continuity (電影感運動平滑與連續留線)
-* Solves the "motion clash" problem (where consecutive cuts jump wildly between hyper-fast motion and complete stillness) by applying two motion smoothing layers:
-  1. **Motion Continuity Envelope**: Applies a **5-beat rolling average filter** to the raw target ideal motion curve. This forces the overall visual tempo of adjacent cuts to grow and shrink gradually, matching the organic build-up of the music.
-  2. **Motion Continuity Penalty**: In the AI matching loop, it calculates the absolute motion energy difference between each candidate and the *immediately preceding clip*. If the dynamic shift exceeds a threshold of **`3.0`**, a progressive **`0.15` penalty** is applied.
-* Guarantees that consecutive video cuts maintain **perfect screen action direction and visual momentum (視覺慣性)** (e.g. transitioning smoothly as `9.5 -> 7.0 -> 6.3 -> 6.8 -> 6.5`!).
+### 2. Motion Flow Smoothing & Envelope Protection
+* **Motion Envelope**: Applies a **5-beat Moving Average Filter** to smooth the raw motion energy curve into a gentle, flowing sinusoidal wave.
+* **Visual Inertia Defense**: Checks motion difference between adjacent cuts. If the absolute difference **`> 3.0`**, it applies a **`0.15` penalty** to discourage jarring visual transitions, ensuring smooth motion continuity.
 
-### 3. Chronological Narrative Storytelling Arc (起、承、轉、合)
-* Solves the "random flashcut montage" problem by dividing the 30-second commercial timeline into **4 distinct chronological storytelling phases**:
-  1. **Phase 1: 起 (Setup - 0s to 5s)**: Backstage preparation, event venue setup, and audience gathering.
-  2. **Phase 2: 承 (Detail - 5s to 12s)**: Product styling detail, spraying, and hair salon craftsmanship.
-  3. **Phase 3: 轉 (Climax - 12s to 25s)**: High-energy CATWALK runway show with hair spins.
-  4. **Phase 4: 合 (Finale - 25s to 30s)**: Audience reaction clapping applause, final styled poses, and high-end brand packaging closeups.
-* Matches visual semantics dynamically, creating a professionally structured commercial narrative that flows logically from scene setup to the grand branding climax!
-
-### 4. High-Precision Transient Beat Detection
+### 3. High-Precision Transient Beat Detection
 * Uses **FFmpeg** to transcode any compressed music format to standard Mono WAV in under 0.3 seconds.
 * Implements a high-precision SciPy/NumPy falling-edge Short-Time Energy (RMS) sliding window onset detector to track exact music tempos and transient peaks.
+* **Climax Target Alignment**: Automatically searches for the musical climax window and snaps its start frame perfectly to the timeline offset (`86400`).
 
-### 5. Crop Offset & Silent Intro Immunity
-* Dynamically reads timeline audio crops (`audio_clip.GetLeftOffset()`) to shift beat markers mathematically, making them **100% immune to trimming offsets**.
-* Extrapolates tempo-aligned beats backwards to cover silent or fade-in intros, ensuring rhythmic cuts start from the very first frame.
+### 4. Smart Padding Margin (Button Shake Mitigation)
+* Implements a **15% Safety Margin Guard** on both ends of raw clips. It completely bypasses the high-shake intervals typical when pressing the record/stop buttons, cropping clips exclusively from the pristine remaining 70% middle section.
 
-### 6. AI Content-Aware Semantic Video Recommendation
-* Uses a local, offline **CLIP model** (`openai/clip-vit-base-patch32` via PyTorch) to extract visual features from 3 keyframes (start, middle, end) of all raw video files.
-* Stores features in a local pickle cache **`video_metadata.pkl`**, enabling **instant, sub-second semantic queries** on subsequent runs.
-* Integrates a high-speed motion energy metric using OpenCV absolute frame difference magnitude across 10 frames in the middle of each clip to profile physical motion intensity.
+### 5. Rolling Motion Stability Scanner
+* Downsamples video frame dimensions by 99% to `160x90` in memory (filtering out wind, hair movement, etc. to isolate camera motion) and runs a `downsample_step = 6` forward decoder (**5.2x speedup** over seek decodes).
+* Computes rolling variance $\text{Var}(M[s : s+D])$ to detect smooth consistent pans or hovers and applies a heavy Peak Shake Penalty to filter out sudden hand bumps.
 
-### 7. Visual Near-Duplicate Defense & Shaky Shot Defense
-* **Visual Near-Duplicate Defense**: Calculates the **cosine similarity between each candidate's embedding and all clips already selected on the timeline**. Applies a **massive `-2.0` score penalty** to any clip with a similarity greater than **`0.88`**, forcing the AI to strictly prioritize diverse models, product packaging, and camera angles.
-* **Shaky Shot Defense**: Detects wild camera shake/focus hunt takes ($motion\_energy \ge 10.5$) and applies a **massive `-3.0` score penalty** to keep the timeline clean and stable.
-
-### 8. Perfect Math-Ceil Frame Rate Scale
-* Solves the 1-frame black gap issue caused by fractional round-off mismatches when placing **29.97 FPS** source clips on a **24.0 FPS** timeline.
-* Employs dynamic compensation using:
-  $$\text{duration\_source} = \text{int}(\text{math.ceil}(\text{duration\_timeline} \times \frac{\text{src\_fps}}{\text{timeline\_fps}}))$$
-  This mathematically guarantees 100% gapless, zero-ripple single-track appending on Video Track 1.
-
-### 9. Resolve API Coordinate Bug Fix
-* Resolves the 1-hour marker offset gotcha where `AddMarker()` expects coordinates relative to the timeline start, while clips use absolute frames.
-* Implements absolute-to-relative coordinate conversions to place markers precisely at `01:00:00:11` instead of `02:00:00:11`.
-
-### 10. AI Color Grade Sync & Timeline Coloring (AI 色彩風格大師)
-* **Smart Clip Coloring**: Automatically color-codes timeline clips via `.SetClipColor()` based on narrative roles (Setup = Navy, Detail = Yellow, Catwalk = Orange, Finale = Purple).
-* **Master Grade Cloning Workflow**: While the Python API `CopyGrades()` is exposed, Resolve's color engine has a database sync limitation. The recommended premium workflow is to grade Clip #1 on the color page, and then perform a 1-second GUI copy:
-  1. Select target clips (Clip #2 to #61).
-  2. Hover over the graded Clip #1 and **Middle-Click (scroll-wheel click)** to instantly duplicate the entire node graph!
-
-### 11. Smart Padding & Handle-Protection Heuristic (智能邊界安全防抖保護區算法)
-* 🛠️ **Instant Shaky Handles Filter**: In raw production takes, the first 1.5s (pressing record) and last 1.5s (pressing stop/adjusting grip) are notoriously shaky. 
-* Employs an automated **15% Safety Margin Guard** on both ends of raw clips, completely shielding them from crop placement. It cuts exclusively from the remaining 70% pristine mid-section, delivering 100% shake-free cuts with 0.00s computation overhead!
-
-### 12. Rolling Motion Stability & Camera Shakiness Defense Algorithm (動態滑動光流平穩度評估)
-* 🛠️ **Computer Vision Stability Optimization**: Utilizes OpenCV to downsample raw Full HD/4K decoded frames in memory by 99% to a tiny `160x90` thumbnail (acting as a low-pass filter to naturally ignore micro-movements like hair strands and focus 100% on macro camera movement).
-* Combines continuous forward decoding with a `downsample_step = 6` temporal filter (achieving a **5.2x speedup** over expensive keyframe seeks!). It computes the rolling variance $\text{Var}(M[s : s+D])$ to detect smooth consistent pans/hovers, applies a heavy Peak Shake Penalty to filter out sudden hand bumps, and returns the mathematically smoothest, most stable `src_start` frame!
-
----
-
-
-### 13. Motion Vector Monotonicity & Direction Reversal Defense (運動向量單調性與運鏡反向防護)
-* 🛠️ **Strictly Block "Back-and-Forth Pendulum" Visual Distractions**: During pan/tilt shots, photographers sometimes reverse their horizontal panning direction mid-take (e.g. panning left, then suddenly jerking right). This creates severe motion sickness and jarring jumps on the timeline.
-* **1D Horizontal Projection Profile Cross-Correlation (NumPy-Powered)**:
-  To circumvent OpenCV environment limitations where `cv2.phaseCorrelation` might be stripped from basic precompiled PIP packages, we developed a pure NumPy 1D Projection Profile solver:
-  1. Sums gray pixels vertically to extract a 1D horizontal signature profile $P(x)$ of length 120.
-  2. Slides and correlates $P_1(x)$ against $P_2(x)$ vertically in NumPy to track the exact sub-pixel horizontal shift $dx(t)$ at each frame.
-* **Directional Monotonicity Ratio Check**:
-  For any cut window $[s : s+D]$, we calculate the ratio of motion matching the dominant direction:
+### 6. Motion Vector Monotonicity & Direction Reversal Defense
+* **1D Horizontal Projection Profile Cross-Correlation**:
+  Summates grayscale pixel intensities vertically to extract a 1D horizontal signature $P(x)$ for each frame. Slides adjacent profile arrays to track sub-pixel horizontal camera translation velocity $dx(t)$ at warp speed.
+* **Direction Monotonicity Score**:
   $$\text{Monotonicity Ratio} = \frac{\max(\sum [dx > 0], \sum [dx < 0])}{\text{Total Active Frames}}$$
-  If the ratio falls below **`90%`** (indicating direction reversals or pendulum swings), a heavy **`Reversal Blocking Penalty`** is triggered, completely excluding the shaky range. This guarantees that your compiled cuts are **100% unidirectional and smooth**!
+  If the monotonicity score is **`< 90%`** (indicating back-and-forth movement), a heavy **Reversal Blocking Penalty** is applied, filtering out pendulum motions to keep pans clean, stable, and single-directional.
 
-### 14. 25.0s Commercial Gold Standard & Storytelling Capping (觀眾畫面精密控鏡)
-* 🛠️ **Strictly 2 Wide/Audience Shots Capped**: Restricts audience/venue wide shots to **exactly 2 clips** in the entire edit (1 establishing shot at the Setup opening, and 1 applause/branding shot at the Finale ending). All middle detail and catwalk shots are strictly filtered to CloseUp/Medium runway takes.
-* **Dynamic 25s Climax Beat Scale**: Automatically trims the BGM "Indian Walk" climax to exactly 25.0 seconds (standard high-end commercial length). At 25.0s, the pacing downsampling compiles exactly 35 cuts. With 36 unique CloseUp/Medium takes in the pool, this mathematical sweet spot guarantees **zero repeating clips (100% unique takes)** across the entire video!
+### 7. 25-Second Commercial Standard & Capping
+* **Storytelling Wide Cap**: Caps audience and venue establishing wide-angle shots to **exactly 2 clips** (Cut #1 and Cut #25). Intermediate cuts are strictly restricted to CloseUp and Medium runway takes.
+* **Zero-Repetition Math**: 25.0 seconds compiles exactly **35 beat cuts**. With an asset pool of 36 unique dynamic takes, this fits perfectly into the **Zero-Repetition Sweet Spot**, ensuring a completely unique clip on every single beat!
 
-### 15. Real-Time JSON CV Caching System (`.cv_edit_cache.json`)
-* 🛠️ **0.5-Second Subsequent Re-runs**: Intercepts physical H.264 sequential decompressions by writing calculated stable frame offset results to a localized JSON cache file. Subsequent editor runs read immediately from disk, performing full-timeline cuts and Resolve coordination syncs in **literally 0.5 seconds**!
+### 8. Global Motion Profile Cache (`.cv_profile_cache.json`)
+* Decouples the caching layer from timeline properties. It profiles raw clips once, indexing full-length frame-by-frame motion vectors under their absolute paths.
+* Any subsequent re-run, timing adjustment, or duration change loads profiles from the JSON cache, completing the entire timeline rebuild in **0.01 seconds**!
+
+### 9. Side-by-Side Brand Outro Overlay (BC & Schwarzkopf)
+* Automatically adds **Video Track 2 & 3** and overlays **BC LOGO** & **Schwarzkopf LOGO** side-by-side during the Finale section (starts at **20.8s / 86895f**).
+* **Precise Geometry**:
+  * Shared scaling: `Zoom = 0.35`
+  * **BC Logo (V2)**: `Pan = -260.0`, `Tilt = -50.0`
+  * **Schwarzkopf Logo (V3)**: `Pan = 260.0`, `Tilt = -50.0`
+
+### 10. Gapless math.ceil Sync & Coordinate Offset Correction
+* Employs a ceiling math formula to prevent 1-frame black gap rendering glitches when placing **29.97 FPS** source files on a **24.0 FPS** timeline:
+  $$\text{duration\_source} = \text{int}(\text{math.ceil}(\text{duration\_timeline} \times \frac{\text{src\_fps}}{\text{timeline\_fps}}))$$
+* **Coordinate Correction**: Automatically subtracts timeline offset (`86400`) from marker coordinates to align Resolve's relative `AddMarker` input with absolute timeline coordinates.
 
 ---
 
-## 🚀 Execution & Testing Guide
+## 📂 Toolbox Directory & Reference Manual
 
-1. Place your background music on **Audio Track 1**, starting at `01:00:00:00`.
-2. Generate beat markers on your timeline by running:
-   ```powershell
-   python auto_beat_marker.py
-   ```
-3. Run the AI auto-editor to compile a stunning 30s cosmetic commercial:
-   ```powershell
-   python run_cinematic_auto_edit.py
-   ```
-4. Verify perfect alignment mathematically:
-   ```powershell
-   python C:\Users\aeiou\.gemini\antigravity\brain\50c1c521-aa15-42fd-b904-d3a1abb1b0c9\scratch\inspect_markers_vs_clips.py
-   ```
-5. **Run Rhythmic Event Highlight Editor (Downsampled Beats + 15% Anti-Shake Padding + Exact Frame-Level Sync)**:
-   A premium editor built for commercial catwalk events, employing narrative rhythmic downsampling (Setup=4 beats/cut, Detail=2 beats/cut, Climax=1 beat/cut, Finale=4 beats/cut) and alternating slash-cut zoom directors (`Zoom = 1.12`, `RotationAngle = ±3.5°`):
+### 🎬 Main Compilers & Editors
+* **`run_event_highlight_edit.py`**:
+  * **Description**: Main event highlight compiler. Orchestrates 2-beat downsampling, button shake margins, global profile cache retrieval, slash-cut tilt packing, BGM climax matching, side-by-side logo placements on V2/V3, and automatic node-graph grade cloning.
+  * **Run**: `python run_event_highlight_edit.py`
+* **`create_semantic_timeline.py`**:
+  * **Description**: Builds and restores the `"Sam前導片_高能行銷版"` timeline, syncs music climax, and generates fully aligned subtitle SRT files.
+  * **Run**: `python create_semantic_timeline.py`
+* **`run_cinematic_auto_edit.py`**:
+  * **Description**: Legacy 30s envelope-based automatic video generator.
+
+### ⚡ Data & Caching Engines
+* **`pre_cache_profiles.py`**:
+  * **Description**: **Runs 100% independently of DaVinci Resolve**. Scans raw directories in the background, extracts motion vector signatures and directionality metrics for all 65 video assets, and compiles `.cv_profile_cache.json`.
+  * **Run**: `python pre_cache_profiles.py`
+
+### 🔍 Diagnostics & Analyzers
+* **`stability_analyzer_hyper_fast.py`**:
+  * **Description**: Evaluates camera stability curves on single clips via rolling optical flow.
+  * **Run**: `python stability_analyzer_hyper_fast.py`
+* **`direction_stability_analyzer.py`**:
+  * **Description**: Computes 1D projection correlation curves on single clips to identify direction reversals.
+  * **Run**: `python direction_stability_analyzer.py`
+* **`diag_timelines.py`**:
+  * **Description**: Diagnostics tool. Lists active timelines, tracks, clip counts, and prints which timeline currently holds GUI focus.
+  * **Run**: `python diag_timelines.py`
+
+### 🧪 Validators & Loaders
+* **`inspect_nanqu_work.py`**:
+  * **Description**: Database validation utility. Directly queries the active Resolve project to mathematically verify track contents, logo coordinates (Pan/Zoom/Tilt), zero-repetition percentages, and audio synchronization.
+  * **Run**: `python inspect_nanqu_work.py`
+* **`reimport_assets.py`**:
+  * **Description**: Safety media pool asset loader. Creates the parent Master folders recursively and checks for duplicate imports.
+  * **Run**: `python reimport_assets.py`
+
+---
+
+## 🤖 AI Rhythmic Editor System Prompt (Boot Commands)
+
+When the user (Editing Director) sends you (AI Assistant) a command in the following format:
+> **"Give me {XX} seconds of video, use {BGM Name} as music, my style is {Visual Style}, and focus on {Focus Object}"**
+
+You must immediately act as the **Core Controller** of this editing system, read the active workspace tools, and execute the following **Standard Operating Procedure (SOP)**:
+
+### 📥 1. Parse Input Parameters & Map Variables
+1. **Target Duration**:
+   * Map `{XX}` to the実體變數 `MAX_DURATION_SEC = float({XX})`.
+   * Total frame constraint: `total_duration_frames = int(MAX_DURATION_SEC * fps)`.
+2. **Audio Track (BGM)**:
+   * Modify the search keyword in the `find_bgm(folder)` function from `indian walk` to `"{BGM Name}".lower()`.
+3. **Semantics & CLIP Search Prompts**:
+   * Align `{Visual Style}` and `{Focus Object}` to dynamic `semantic_prompts` inside `run_event_highlight_edit.py`:
+     * `"setup"` ➡️ `"{Visual Style} {Focus Object} event venue backstage preparation"`
+     * `"detail"` ➡️ `"{Focus Object} cosmetic closeups styling craftsmanship detail"`
+     * `"catwalk"` ➡️ `"{Focus Object} beautiful fashion model runway catwalk spin movement closeup"`
+     * `"finale"` ➡️ `"{Focus Object} grand finale applause brand packaging logo"`
+
+### ⚡ 2. Cache & GUI Focus Pre-flight Checks (GUI Sync Gotcha)
+1. **Motion Profile Cache Check**:
+   * Verify if the local cache file `.cv_profile_cache.json` covers all assets. If missing or new videos are added, run `python pre_cache_profiles.py` in the background first.
+2. **GUI Focus Validation**:
+   * Run `python diag_timelines.py` to confirm the currently open GUI tab name in Resolve.
+   * **🚨 Resolve API Focus Gotcha**: If the open tab does not match the target timeline (e.g. `'南區工作'`), you must halt and alert the user:
+     *"Please double-click the timeline in your Resolve Media Pool to focus it in your GUI editor to prevent Resolve from appending clips to the wrong tab!"*
+
+### 🚀 3. Modify Code & Compile
+1. Use `replace_file_content` to edit `run_event_highlight_edit.py` with the parsed duration, BGM query name, and CLIP semantic prompts.
+2. Run the main compiler in the terminal:
    ```powershell
    python run_event_highlight_edit.py
    ```
-7. **Run Directional Monotonicity & Reversal Defense Analysis**:
-   Tracks the sub-pixel camera translation path $dx(t)$ frame-by-frame and retrieves the optimal 100% unidirectional smooth cutting range:
-   ```powershell
-   python direction_stability_analyzer.py
-   ```
+3. Monitor terminal output, checking for `🎉 All tasks completed beautifully!` with exit code 0.
 
-6. **Run Hyper-Fast Rolling Camera Motion Stability Analysis**:
-   Uses computer vision optical flow downscaling to find the absolute smoothest, most stable, shake-free range in any video clip:
+### 📊 4. Database Validation & Report
+1. Execute the database inspector to confirm the physical track layout:
    ```powershell
-   python stability_analyzer_hyper_fast.py
+   python C:\Users\larrywu\.gemini\antigravity\brain\878978ab-d3f5-418c-88e5-9314eb79fe0f\scratch\inspect_nanqu_work.py
    ```
+2. Gather metrics (total cuts, logo Pan/Zoom/Tilt properties, BGM lengths, zero-repetition percentages).
+3. Report the completion state to the director in a highly professional, humble, and concise manner, avoiding overconfident or boastful vocabulary.

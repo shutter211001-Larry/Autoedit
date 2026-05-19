@@ -710,7 +710,7 @@ def run_event_highlight_edit():
                 break
         if logo_start_frame is None:
             logo_start_frame = timeline_start + int(20.8 * fps)
-            
+        total_duration_frames = int(MAX_DURATION_SEC * fps)
         logo_end_frame = timeline_start + total_duration_frames
         logo_duration = logo_end_frame - logo_start_frame
 
