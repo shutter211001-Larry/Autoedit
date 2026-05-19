@@ -57,6 +57,78 @@ This project is a high-performance **AI-powered rhythmic video editor** that int
   $$\text{duration\_source} = \text{int}(\text{math.ceil}(\text{duration\_timeline} \times \frac{\text{src\_fps}}{\text{timeline\_fps}}))$$
 * **Coordinate Correction**: Automatically subtracts timeline offset (`86400`) from marker coordinates to align Resolve's relative `AddMarker` input with absolute timeline coordinates.
 
+### 11. AI-Driven Fusion Typography & Aesthetics
+* **Programmatic Integration**: Leveraging Resolve's internal Fusion scripting namespace, an AI editor can dynamically instantiate Fusion compositions (Title Cards) on top of timeline clips and call `SetInput` programmatically to write high-end visual styles.
+* **Aesthetic Presets for Robots**:
+  To prevent raw or cheap looking fonts, the system defines three high-end design presets with exact node parameters to allow incoming bots to load premium typography styling instantly:
+
+  #### ⚜️ Preset 1: Minimalist Luxury (The "Vogue" Serif)
+  * **Aesthetic Tone**: Graceful, high-fashion, ultra-clean serif layout with generous breathing room. Ideal for premium cosmetics, luxury goods, fashion, or salon intros.
+  * **Node Attributes**:
+    * `Font` (English): `"Playfair Display"` or `"Didot"` or `"Cinzel"` (Premium Serifs)
+    * `Font` (Chinese Compatible): **`"Noto Serif CJK TC"`** (思源宋體 - Light/Thin) or **`"Microsoft JhengHei"`** (微軟正黑體 - Light)
+    * `Style`: `"Regular"` or `"Light"`
+    * `Size`: `0.062` (Elegant small scaling with massive negative space)
+    * `Tracking` (Character Spacing): `2.2` to `2.4` (Generous spacing produces an exquisite, magazine-like editorial presence)
+    * `Line Spacing`: `1.2`
+    * `Color` (Soft Warm White): `Red = 0.98`, `Green = 0.97`, `Blue = 0.95`
+    * `HAnchor` (Alignment): `1` (Center Aligned)
+    * `Soft Shadow` (Shadow Node): `SoftnessX = 8.0`, `SoftnessY = 8.0`, `Alpha = 0.15` (Whisper-thin shadow for soft depth)
+
+  #### ⚡ Preset 2: Neo-Noir Tech (The "Cyber-Tech" Bold)
+  * **Aesthetic Tone**: Aggressive, geometric sans-serif with vibrant glows. Perfect for dynamic tech showcase, streetwear promos, high-energy clips, or EDM visualizers.
+  * **Node Attributes**:
+    * `Font` (English): `"Outfit"` or `"Montserrat"` or `"Space Grotesk"` (Geometric Sans-Serif)
+    * `Font` (Chinese Compatible): **`"Noto Sans CJK TC"`** (思源黑體 - Heavy/Black/Bold) or **`"Microsoft JhengHei"`** (微軟正黑體 - Bold)
+    * `Style`: `"Extra Bold"` or `"Black"`
+    * `Size`: `0.11` (Strong focal footprint)
+    * `Tracking`: `1.05` (Tight modern spacing)
+    * `Color` (Pure Stark White): `Red = 1.0`, `Green = 1.0`, `Blue = 1.0`
+    * `Glow1` (Glow Node):
+      * `Filter`: `"Glow"`
+      * `GlowSize`: `12.0` (Soft scatter scale)
+      * `Blend`: `0.45` (Vibrant neon blend magnitude)
+      * *Neon Teal Variation*: `GlowRed = 0.0`, `GlowGreen = 0.95`, `GlowBlue = 0.85`
+      * *Acid Pink Variation*: `GlowRed = 1.0`, `GlowGreen = 0.05`, `GlowBlue = 0.45`
+
+  #### 📐 Preset 3: Modern Editorial (The "Swiss Editorial")
+  * **Aesthetic Tone**: Stark, asymmetric, left-aligned sans-serif layout. Emulates high-end print design editorial magazines.
+  * **Node Attributes**:
+    * `Font` (English): `"Inter"` or `"Helvetica Neue"` or `"DM Sans"` (Neutral Sans-Serif)
+    * `Font` (Chinese Compatible): **`"Noto Sans CJK TC"`** (思源黑體 - Medium/Regular) or **`"Microsoft JhengHei"`** (微軟正黑體 - Regular)
+    * `Style`: `"Medium"` or `"Bold"`
+    * `Size`: `0.082`
+    * `Tracking`: `1.0` (Standard crisp spacing)
+    * `HAnchor`: `0` (Force Left Aligned)
+    * `Color` (Matte Charcoal): `Red = 0.12`, `Green = 0.12`, `Blue = 0.12` (Commonly overlayed on flat cream/beige cards)
+    * `Decoration`: Zero artificial glows or shadows. Pure flat layout.
+
+* **🤖 Robot Python API Execution Blueprint**:
+  ```python
+  # 1. Instantiate Fusion composition on a TimelineItem
+  comp = timeline_item.AddFusionComp()
+  
+  # 2. Locate the Text tool node (default named 'Text1' or Text+ inside templates)
+  text_tool = comp.FindTool("Text1")
+  
+  # 3. Apply the Vogue Serif luxury styling programmatically
+  text_tool.SetInput("Font", "Playfair Display")
+  text_tool.SetInput("Style", "Regular")
+  text_tool.SetInput("Size", 0.062)
+  text_tool.SetInput("Tracking", 2.2)
+  text_tool.SetInput("Red", 0.98)
+  text_tool.SetInput("Green", 0.97)
+  text_tool.SetInput("Blue", 0.95)
+  text_tool.SetInput("HAnchor", 1.0) # Center
+  
+  # 4. Modify nested Shadow or Glow properties if present in template
+  shadow_tool = comp.FindTool("Shadow1")
+  if shadow_tool:
+      shadow_tool.SetInput("SoftnessX", 8.0)
+      shadow_tool.SetInput("SoftnessY", 8.0)
+      shadow_tool.SetInput("Alpha", 0.15)
+  ```
+
 ---
 
 ## 📂 Toolbox Directory & Reference Manual
