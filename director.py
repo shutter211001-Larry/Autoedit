@@ -42,6 +42,7 @@ from core.aesthetic_gate import (
     score_assets
 )
 from diagnostics.track_diagnoser import diagnose_timeline
+from core.continuity_solver import NarrativeContinuitySolver
 
 def get_resolve_folder(media_pool, local_path):
     """
@@ -86,6 +87,121 @@ def get_resolve_folder(media_pool, local_path):
         return folder
         
     return root_folder
+
+def compile_clip_annotations(config_data, pkl_path, annotations_path):
+    """
+    Dynamically compiles or updates clip_annotations.json based on narrative characters
+    and actions defined in the configuration.
+    """
+    import torch
+    
+    characters_cfg = config_data.get("narrative_characters", {})
+    actions_cfg = config_data.get("narrative_actions", {})
+    
+    if not characters_cfg or not actions_cfg:
+        print("   ⚠️ [Clip Annotations] Narrative characters or actions not configured. Skipping compilation.")
+        return False
+
+    # Check if we need to recompile
+    recompile = False
+    if os.path.exists(annotations_path):
+        try:
+            with open(annotations_path, "r", encoding="utf-8") as f:
+                existing_annotations = json.load(f)
+            
+            # Check meta field
+            cached_meta = existing_annotations.get("_meta", {})
+            cached_chars = cached_meta.get("characters", {})
+            cached_acts = cached_meta.get("actions", {})
+            
+            if cached_chars != characters_cfg or cached_acts != actions_cfg:
+                print("   🔄 [Clip Annotations] Narrative configurations changed. Recompiling annotations...")
+                recompile = True
+        except Exception:
+            recompile = True
+    else:
+        print("   🔍 [Clip Annotations] Annotations file missing. Initializing compilation...")
+        recompile = True
+
+    if not recompile:
+        print("   🧠 [Clip Annotations] Up-to-date annotations cache found. Skipping re-classification.")
+        return True
+
+    # Run the classification
+    metadata_cache = load_metadata_cache(pkl_path)
+    if not metadata_cache:
+        print("   ❌ Error: video_metadata.pkl is missing. Cannot compile clip annotations.")
+        return False
+
+    print("   ⚡ [Clip Annotations] Loading CLIP model to classify assets...")
+    model, processor, dev = load_clip_model()
+
+    # Build queries mapping
+    queries = {}
+    char_keys = []
+    for k, v in characters_cfg.items():
+        queries[f"char_{k}"] = v
+        char_keys.append(k)
+
+    act_keys = []
+    for k, v in actions_cfg.items():
+        queries[f"act_{k}"] = v
+        act_keys.append(k)
+
+    query_keys = list(queries.keys())
+    query_texts = [queries[k] for k in query_keys]
+
+    with torch.no_grad():
+        inputs = processor(text=query_texts, return_tensors="pt", padding=True).to(dev)
+        features = model.get_text_features(**inputs)
+        embeddings = features / features.norm(p=2, dim=-1, keepdim=True)
+        query_embeddings = embeddings.cpu().numpy()
+
+    query_emb_map = {query_keys[i]: query_embeddings[i] for i in range(len(query_keys))}
+
+    clip_annotations = {
+        "_meta": {
+            "characters": characters_cfg,
+            "actions": actions_cfg
+        }
+    }
+
+    for filename, meta in metadata_cache.items():
+        img_emb = np.array(meta["embedding"])
+        scores = {}
+        for q_key, q_emb in query_emb_map.items():
+            scores[q_key] = float(np.dot(img_emb, q_emb))
+
+        # Determine best model/character
+        model_scores = {k: scores[f"char_{k}"] for k in char_keys}
+        best_model = max(model_scores, key=model_scores.get) if model_scores else "product_or_booth"
+        model_val = model_scores[best_model] if model_scores else 0.0
+
+        # Determine best action
+        action_scores = {k: scores[f"act_{k}"] for k in act_keys}
+        best_action = max(action_scores, key=action_scores.get) if action_scores else "unknown"
+        action_val = action_scores[best_action] if action_scores else 0.0
+
+        # Assign character based on confidence threshold
+        assigned_character = "product_or_booth"
+        if model_val > 0.23:
+            assigned_character = best_model
+
+        clip_annotations[filename] = {
+            "filename": filename,
+            "character": assigned_character,
+            "best_character_score": model_val,
+            "action": best_action,
+            "best_action_score": action_val,
+            "raw_scores": scores
+        }
+
+    # Save to disk
+    with open(annotations_path, "w", encoding="utf-8") as f:
+        json.dump(clip_annotations, f, indent=2, ensure_ascii=False)
+
+    print(f"   🎉 [Clip Annotations] Successfully classified {len(metadata_cache)} clips and saved to {annotations_path}!")
+    return True
 
 def run_precache(config_data):
     """
@@ -243,6 +359,11 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
         print("❌ Error: CLIP visual metadata could not be loaded.")
         sys.exit(1)
         
+    # Compile clip annotations and initialize narrative continuity solver
+    annotations_path = os.path.join(cache_dir, "clip_annotations.json")
+    compile_clip_annotations(config_data, pkl_path, annotations_path)
+    solver = NarrativeContinuitySolver(annotations_path)
+        
     # 7. Semantic Storyboarding using CLIP
     print(f"\n🧠 Step 6: Coding narrative prompts & Aesthetic Gate prompts...")
     model, processor, dev = load_clip_model()
@@ -267,42 +388,44 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
     all_rel_frames = sorted(list(markers_dict.keys()))
     rel_frames_30s = [f for f in all_rel_frames if f <= max_frames]
     
-    # Define timing boundaries
-    t_setup = 5.0
-    t_detail = 12.0
-    t_catwalk = 25.0
+    # Dynamic narrative schema parsing from configuration
+    default_schema = {
+        "segments": [
+            {"role": "setup", "up_to_seconds": 5.0, "downsample_rate": 4},
+            {"role": "detail", "up_to_seconds": 12.0, "downsample_rate": 2},
+            {"role": "catwalk", "up_to_seconds": 25.0, "downsample_rate": 2},
+            {"role": "finale", "up_to_seconds": 9999.0, "downsample_rate": 4}
+        ]
+    }
+    narrative_schema = config_data.get("narrative_schema", default_schema)
+    segments = narrative_schema.get("segments", default_schema["segments"])
     
-    setup_markers = []
-    detail_markers = []
-    climax_markers = []
-    finale_markers = []
+    # Initialize container for frames matching each role
+    segment_frames = {seg["role"]: [] for seg in segments}
     
     for f in rel_frames_30s:
         t = f / fps
-        if t < t_setup:
-            setup_markers.append(f)
-        elif t < t_detail:
-            detail_markers.append(f)
-        elif t < t_catwalk:
-            climax_markers.append(f)
+        matched_role = None
+        for seg in segments:
+            if t < seg["up_to_seconds"]:
+                matched_role = seg["role"]
+                break
+        if matched_role:
+            segment_frames[matched_role].append(f)
         else:
-            finale_markers.append(f)
-            
-    # Dynamic rhythm downsampling
+            if segments:
+                segment_frames[segments[-1]["role"]].append(f)
+                
+    # Downsample beats dynamically per segment
     downsampled_beats = []
-    for idx, f in enumerate(setup_markers):
-        if idx % 4 == 0:
-            downsampled_beats.append((f, "setup"))
-    for idx, f in enumerate(detail_markers):
-        if idx % 2 == 0:
-            downsampled_beats.append((f, "detail"))
-    for idx, f in enumerate(climax_markers):
-        if idx % 2 == 0:
-            downsampled_beats.append((f, "catwalk"))
-    for idx, f in enumerate(finale_markers):
-        if idx % 4 == 0:
-            downsampled_beats.append((f, "finale"))
-            
+    for seg in segments:
+        role = seg["role"]
+        rate = seg.get("downsample_rate", 1)
+        frames = segment_frames.get(role, [])
+        for idx, f in enumerate(frames):
+            if idx % rate == 0:
+                downsampled_beats.append((f, role))
+                
     downsampled_beats.sort(key=lambda x: x[0])
     unique_beats = []
     seen = set()
@@ -320,7 +443,8 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
             last_frame = abs_frame
             
     if last_frame < timeline_start + max_frames:
-        cut_intervals.append((last_frame, timeline_start + max_frames, "finale"))
+        last_role = segments[-1]["role"] if segments else "finale"
+        cut_intervals.append((last_frame, timeline_start + max_frames, last_role))
         
     print(f"🥁 Synced cuts compiled: {len(cut_intervals)} elegant cinematic cuts.")
     
@@ -408,6 +532,16 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
                 motion_diff = abs(candidate["motion_energy"] - prev_motion)
                 if motion_diff > 3.0:
                     total_score -= 0.15 * (motion_diff - 3.0)
+            
+            # Inject Narrative Continuity Solver Score Compensation
+            continuity_bonus = solver.score_candidate(
+                candidate_name=candidate["filename"],
+                role=role,
+                history_seq=final_clip_sequence,
+                next_clip_info=None,
+                config_rules=config_data.get("continuity_rules", {})
+            )
+            total_score += continuity_bonus
                     
             if total_score > best_score:
                 best_score = total_score
@@ -418,9 +552,16 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
         from core.director_rules import get_aesthetic_grade
         a_grade = get_aesthetic_grade(best_candidate["aesthetic_score"])
         
+        # Resolve character and action from annotations
+        anno = solver.annotations.get(best_candidate["filename"], {})
+        cand_char = anno.get("character", "product_or_booth")
+        cand_act = anno.get("action", "product_holding")
+        
         final_clip_sequence.append({
             "item": None,  # Will be mapped to Resolve MediaPoolItem after robust import
             "name": best_candidate["filename"],
+            "character": cand_char,
+            "action": cand_act,
             "role": role,
             "motion": best_candidate["motion_energy"],
             "similarity": best_candidate[f"sim_{role}"],
@@ -635,8 +776,6 @@ def run_reroll_engine(config_data, aesthetic_override=None):
         print("💡 Tip: Go to DaVinci Resolve, right-click on the clip you want to change, set 'Clip Color' to 'Pink' or 'Rose', then run reroll again.")
         return
         
-    print(f"🎯 Detected {len(red_clips_indices)} clips colored 'Red' scheduled for smart replacement!")
-    
     # Setup cache
     cache_dir = os.path.join(root_dir, "cache")
     pkl_path = os.path.join(cache_dir, "video_metadata.pkl")
@@ -646,6 +785,31 @@ def run_reroll_engine(config_data, aesthetic_override=None):
     if not metadata_cache:
         print("❌ Error: video_metadata.pkl is missing. Please run 'precache' or 'run' first.")
         sys.exit(1)
+
+    # Compile clip annotations and initialize narrative continuity solver
+    annotations_path = os.path.join(cache_dir, "clip_annotations.json")
+    compile_clip_annotations(config_data, pkl_path, annotations_path)
+    solver = NarrativeContinuitySolver(annotations_path)
+        
+    # Build current timeline representation
+    current_timeline_clips = []
+    for idx, item in enumerate(placed_clips):
+        c_name = os.path.basename(item.GetName())
+        anno = {}
+        for k, v in solver.annotations.items():
+            if k.lower() == c_name.lower():
+                anno = v
+                break
+        current_timeline_clips.append({
+            "name": c_name,
+            "character": anno.get("character", "product_or_booth"),
+            "action": anno.get("action", "product_holding"),
+            "role": "unknown",
+            "motion": 0.0,
+            "similarity": 0.0
+        })
+        
+    print(f"🎯 Detected {len(red_clips_indices)} clips (Red/Pink/Rose) scheduled for smart replacement!")
         
     # Load model and embeddings for prompt mapping
     model, processor, dev = load_clip_model()
@@ -731,6 +895,10 @@ def run_reroll_engine(config_data, aesthetic_override=None):
         max_sim = max(theme_similarities) if theme_similarities else 1.0
         sim_range = max_sim - min_sim if max_sim != min_sim else 1.0
         
+        # Construct history and look-ahead sequences for continuity scoring
+        history_seq = current_timeline_clips[:target_idx]
+        next_clip_info = current_timeline_clips[target_idx + 1] if target_idx + 1 < len(current_timeline_clips) else None
+        
         best_candidate = None
         best_score = -9999.0
         
@@ -747,6 +915,16 @@ def run_reroll_engine(config_data, aesthetic_override=None):
             if candidate["motion_energy"] >= 10.5:
                 total_score -= 3.0
                 
+            # Inject Narrative Continuity Solver Score Compensation (Bi-directional)
+            continuity_bonus = solver.score_candidate(
+                candidate_name=candidate["filename"],
+                role=role,
+                history_seq=history_seq,
+                next_clip_info=next_clip_info,
+                config_rules=config_data.get("continuity_rules", {})
+            )
+            total_score += continuity_bonus
+            
             if total_score > best_score:
                 best_score = total_score
                 best_candidate = candidate
@@ -850,6 +1028,17 @@ def run_reroll_engine(config_data, aesthetic_override=None):
                         
                 print(f"   🎉 SUCCESS: Replaced '{old_name}' with '{best_candidate['filename']}' seamlessly!")
                 used_filenames.append(fname)
+                
+                # Update current timeline list with replaced candidate annotations for subsequent context
+                new_anno = solver.annotations.get(best_candidate["filename"], {})
+                current_timeline_clips[target_idx] = {
+                    "name": best_candidate["filename"],
+                    "character": new_anno.get("character", "product_or_booth"),
+                    "action": new_anno.get("action", "product_holding"),
+                    "role": role,
+                    "motion": best_candidate["motion_energy"],
+                    "similarity": best_candidate[f"sim_{role}"]
+                }
             else:
                 print(f"   ❌ Error: Appended succeeded but could not locate the new item.")
         else:

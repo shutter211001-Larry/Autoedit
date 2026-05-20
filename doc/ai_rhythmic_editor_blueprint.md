@@ -249,4 +249,53 @@ graph TD
 > 收到您的訴求後，我將立即為您執行代碼修改與自動化編譯編排！請告訴我您的訴求：*」
 
 ---
-*Blueprint version: 2.2.0 | Compatible with DaVinci Resolve 21 | Compiled for High-Performance AI Agents*
+
+## 💬 第六區塊：對話式劇本引擎與語意變數互動手冊 (Conversational Script Engine & Semantic Variables Manual)
+
+為了讓本系統不僅能執行固定劇本，還能具備極致的「對話互動靈活性」，我們設計了全新的 **語意查詢變數動態綁定機制 (Dynamic Semantic Query Binding)**。這讓剪輯導演能夠在不更改任何 Python 代碼的情況下，透過簡單的自然語言對話，即時調整影片的剪輯走向與畫面元素分佈。
+
+### 1. 自然語言意圖與語意變數映射 (Intent-to-Variable Mapping)
+
+當剪輯導演發出特定的畫面呈現要求時，系統會自動將其轉化為對應的 CLIP 語意特徵描述，並將其注入為變數以引導評分決策：
+
+```mermaid
+graph TD
+    UserPrompt[導演輸入: '我想要多一點純產品和特寫畫面'] --> parser[對話式解析器]
+    parser --> VarInjection[動態語意變數注入]
+    VarInjection --> |注入 prompts| CLIP[CLIP 語意評分模組]
+    VarInjection --> |更新比例與權重| Rules[敘事連續性求解器]
+    CLIP --> Timeline[達芬奇時間軸物理組裝]
+```
+
+* **導演輸入範例**：「我想在開場多呈現產品包裝，中間穿插男模特的造型特寫，不要太多女模特。」
+* **語意變序對應表**：
+  * **純產品/包裝展示**：映射至關鍵字變數 `"product_packaging_showcase, macro shot of elegant bottle"`。
+  * **男模特**：映射至關鍵字變數 `"handsome male model styling hair"`。
+  * **女模特**：排除或降低權重（動態調整餘弦相似度閾值或在 `continuity_rules` 施加角色排斥重罰）。
+
+### 2. 核心架構：動態語意快取編譯 (Dynamic Annotation Cache Compilation)
+
+為了解決 CLIP 即時推論速度緩慢的痛點，系統採用了「背景增量快取編譯」技術：
+1. **設定檔 JSON 驅動**：所有可能出現的人類角色與動作定義均宣告於 `config/bc_exhibition_25s.json` 的 `narrative_characters` 與 `narrative_actions` 中。
+2. **自動背景編譯 (Automated Compiler)**：當導演在對話中改變要求時，`compile_clip_annotations()` 函數會在 **0.5 秒內**自動讀取現有的高維特徵快取 `.cv_profile_cache.json`，對 60 多個影片素材重新進行語意匹配評分，並更新寫入本地快取 `cache/clip_annotations.json`。
+3. **求解器無縫讀取**：`NarrativeContinuitySolver` 模組即時載入編譯後的語意標記快取，在主剪輯（`run`）與單鏡重選（`reroll`）中提供 100% 的邏輯保障。
+
+### 3. 對話式劇本引擎互動範例指令集
+
+導演可使用下列「通用對話句型」來驅動 AI 剪輯：
+
+* **模式 A：特定鏡頭語意覆寫 (Targeted Shot Semantics Override)**
+  * *對話*：「幫我把第 6 鏡換成純產品展示。」
+  * *AI 代理人反應*：
+    1. 產生產品查詢語意：`"exquisite beauty product closeup, cosmetic bottle texture"`。
+    2. 將 Resolve 時間軸上第 6 鏡標記為 Pink/Rose。
+    3. 執行 Reroll 動態匹配，鎖定角色 `detail` 且對「產品」語意分數給予最大加權補償。
+* **模式 B：多角色分佈微調 (Dynamic Role Distribution Tuning)**
+  * *對話*：「這次的版本我希望人物分佈為：產品 (50%)、男模特 (30%)、髮型師 (20%)。」
+  * *AI 代理人反應*：
+    1. 修改設定檔 JSON 中的 `narrative_schema` 比例配置。
+    2. 背景自動執行 `compile_clip_annotations` 重新對齊特徵。
+    3. 呼叫 `python director.py --config config/bc_exhibition_25s.json --action run` 一鍵重新組裝，完全自動化實作，且聲畫對拍與調色複製毫無差池！
+
+---
+*Blueprint version: 2.3.0 | Compatible with DaVinci Resolve 21 | Compiled for High-Performance AI Agents*

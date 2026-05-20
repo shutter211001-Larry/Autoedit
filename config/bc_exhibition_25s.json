@@ -13,6 +13,69 @@
     "catwalk": "fashion model presenting premium cosmetic product, slow motion product showcase, elegant product rotation performance, professional styling exhibition stage",
     "finale": "grand finale branding product presentation close-up, premium cosmetic bottle showcase with logo, professional high-end studio lighting display"
   },
+  "narrative_characters": {
+    "blonde_female": "a female model with blonde hair, beautiful blonde woman",
+    "brunette_female": "a female model with dark black hair, brunette woman",
+    "male": "a male model or handsome man, man styling hair",
+    "stylist": "professional hair stylist working on client hair, hair dresser"
+  },
+  "narrative_actions": {
+    "selfie": "a woman taking a selfie with a smartphone camera, smiling to phone",
+    "spray": "spraying hair spray product aerosol mist on hair, hair styling spray",
+    "catwalk": "model catwalk walking presentation showcase fashion show",
+    "combing": "combing or brushing hair, styling hair with hands",
+    "shampoo": "washing hair at salon sink shampoo, hair treatment wash",
+    "product_holding": "holding a premium cosmetic product bottle in hand close-up",
+    "booth_view": "hair salon exhibition booth, cosmetic presentation counter, display shelves",
+    "product_closeup": "macro extreme close-up of premium cosmetic product bottle styling packaging"
+  },
+  "continuity_rules": {
+    "character_locking": {
+      "min_contiguous_cuts": 3,
+      "lock_bonus": 1.8,
+      "fatigue_penalty": -0.8
+    },
+    "action_causality": [
+      {
+        "trigger_action": "spray",
+        "prevent_repeat": true,
+        "repeat_penalty": -3.0,
+        "prefer_next_actions": ["combing", "product_holding", "product_closeup"],
+        "prefer_bonus": 1.2
+      },
+      {
+        "trigger_action": "shampoo",
+        "prevent_repeat": true,
+        "repeat_penalty": -3.0,
+        "prefer_next_actions": ["combing", "spray"],
+        "prefer_bonus": 1.2
+      }
+    ]
+  },
+  "narrative_schema": {
+    "segments": [
+      {
+        "role": "setup",
+        "up_to_seconds": 5.0,
+        "downsample_rate": 4
+      },
+      {
+        "role": "detail",
+        "up_to_seconds": 12.0,
+        "downsample_rate": 2
+      },
+      {
+        "role": "catwalk",
+        "up_to_seconds": 25.0,
+        "downsample_rate": 2
+      },
+      {
+        "role": "finale",
+        "up_to_seconds": 9999.0,
+        "downsample_rate": 4
+      }
+    ]
+  },
   "outro_logos": [
     {
       "name": "BC_2018_LOGO.png",

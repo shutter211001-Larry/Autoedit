@@ -1,4 +1,22 @@
 {
+  "_meta": {
+    "characters": {
+      "blonde_female": "a female model with blonde hair, beautiful blonde woman",
+      "brunette_female": "a female model with dark black hair, brunette woman",
+      "male": "a male model or handsome man, man styling hair",
+      "stylist": "professional hair stylist working on client hair, hair dresser"
+    },
+    "actions": {
+      "selfie": "a woman taking a selfie with a smartphone camera, smiling to phone",
+      "spray": "spraying hair spray product aerosol mist on hair, hair styling spray",
+      "catwalk": "model catwalk walking presentation showcase fashion show",
+      "combing": "combing or brushing hair, styling hair with hands",
+      "shampoo": "washing hair at salon sink shampoo, hair treatment wash",
+      "product_holding": "holding a premium cosmetic product bottle in hand close-up",
+      "booth_view": "hair salon exhibition booth, cosmetic presentation counter, display shelves",
+      "product_closeup": "macro extreme close-up of premium cosmetic product bottle styling packaging"
+    }
+  },
   "C0326.MP4": {
     "filename": "C0326.MP4",
     "character": "stylist",
@@ -16,8 +34,8 @@
       "act_combing": 0.278960093273337,
       "act_shampoo": 0.2601998763468619,
       "act_product_holding": 0.267958413281883,
-      "scene_booth": 0.2518022428466036,
-      "scene_closeup_bottle": 0.22116981078850897
+      "act_booth_view": 0.2518022428466036,
+      "act_product_closeup": 0.22116981078850897
     }
   },
   "C0319.MP4": {
@@ -37,8 +55,8 @@
       "act_combing": 0.24186039079103078,
       "act_shampoo": 0.2515819649194482,
       "act_product_holding": 0.26553043175078206,
-      "scene_booth": 0.23884916522994493,
-      "scene_closeup_bottle": 0.26360296185934673
+      "act_booth_view": 0.23884916522994493,
+      "act_product_closeup": 0.26360296185934673
     }
   },
   "C0322.MP4": {
@@ -58,8 +76,8 @@
       "act_combing": 0.21188550726592276,
       "act_shampoo": 0.2336431878632208,
       "act_product_holding": 0.2620497416677547,
-      "scene_booth": 0.27037485209137546,
-      "scene_closeup_bottle": 0.26424578585077785
+      "act_booth_view": 0.27037485209137546,
+      "act_product_closeup": 0.26424578585077785
     }
   },
   "C0286.MP4": {
@@ -79,8 +97,8 @@
       "act_combing": 0.22208697929594728,
       "act_shampoo": 0.1889026945171638,
       "act_product_holding": 0.22582281130081583,
-      "scene_booth": 0.21138105942256116,
-      "scene_closeup_bottle": 0.16633534616337073
+      "act_booth_view": 0.21138105942256116,
+      "act_product_closeup": 0.16633534616337073
     }
   },
   "C0325.MP4": {
@@ -100,8 +118,8 @@
       "act_combing": 0.19169897508591202,
       "act_shampoo": 0.20819813965348322,
       "act_product_holding": 0.2249326599017572,
-      "scene_booth": 0.2649863446612054,
-      "scene_closeup_bottle": 0.22596209978450868
+      "act_booth_view": 0.2649863446612054,
+      "act_product_closeup": 0.22596209978450868
     }
   },
   "C0324.MP4": {
@@ -121,8 +139,8 @@
       "act_combing": 0.21150929667792223,
       "act_shampoo": 0.21727199734090452,
       "act_product_holding": 0.2567572943701323,
-      "scene_booth": 0.24821363081983366,
-      "scene_closeup_bottle": 0.21627589292865107
+      "act_booth_view": 0.24821363081983366,
+      "act_product_closeup": 0.21627589292865107
     }
   },
   "C0327.MP4": {
@@ -142,8 +160,8 @@
       "act_combing": 0.23004964223813323,
       "act_shampoo": 0.2085072712791757,
       "act_product_holding": 0.22869399363320408,
-      "scene_booth": 0.2242571253216261,
-      "scene_closeup_bottle": 0.15310477406388928
+      "act_booth_view": 0.2242571253216261,
+      "act_product_closeup": 0.15310477406388928
     }
   },
   "C0321.MP4": {
@@ -163,8 +181,8 @@
       "act_combing": 0.20507529675688552,
       "act_shampoo": 0.19223362618750203,
       "act_product_holding": 0.22533336731642886,
-      "scene_booth": 0.237749579894302,
-      "scene_closeup_bottle": 0.2034416465440359
+      "act_booth_view": 0.237749579894302,
+      "act_product_closeup": 0.2034416465440359
     }
   },
   "C0311.MP4": {
@@ -184,8 +202,8 @@
       "act_combing": 0.23963214677436506,
       "act_shampoo": 0.24842534242104986,
       "act_product_holding": 0.28359497314299476,
-      "scene_booth": 0.2478742113350722,
-      "scene_closeup_bottle": 0.21183815608472054
+      "act_booth_view": 0.2478742113350722,
+      "act_product_closeup": 0.21183815608472054
     }
   },
   "C0323.MP4": {
@@ -205,8 +223,8 @@
       "act_combing": 0.22272930561554016,
       "act_shampoo": 0.24632111395413303,
       "act_product_holding": 0.24874973158684982,
-      "scene_booth": 0.2914461914831435,
-      "scene_closeup_bottle": 0.2511703661218032
+      "act_booth_view": 0.2914461914831435,
+      "act_product_closeup": 0.2511703661218032
     }
   },
   "C0313.MP4": {
@@ -226,8 +244,8 @@
       "act_combing": 0.20173148201993726,
       "act_shampoo": 0.17180229653123336,
       "act_product_holding": 0.23403250875587425,
-      "scene_booth": 0.21822214866427456,
-      "scene_closeup_bottle": 0.14926215524740827
+      "act_booth_view": 0.21822214866427456,
+      "act_product_closeup": 0.14926215524740827
     }
   },
   "C0316.MP4": {
@@ -247,8 +265,8 @@
       "act_combing": 0.23357961722391613,
       "act_shampoo": 0.19396446231746683,
       "act_product_holding": 0.2145127047437017,
-      "scene_booth": 0.18081991412495735,
-      "scene_closeup_bottle": 0.1770501811813422
+      "act_booth_view": 0.18081991412495735,
+      "act_product_closeup": 0.1770501811813422
     }
   },
   "C0304.MP4": {
@@ -268,8 +286,8 @@
       "act_combing": 0.24046155566668753,
       "act_shampoo": 0.22053552332199797,
       "act_product_holding": 0.2525708132845081,
-      "scene_booth": 0.24801637783474673,
-      "scene_closeup_bottle": 0.1683616432286565
+      "act_booth_view": 0.24801637783474673,
+      "act_product_closeup": 0.1683616432286565
     }
   },
   "C0303.MP4": {
@@ -289,8 +307,8 @@
       "act_combing": 0.24353360456904838,
       "act_shampoo": 0.23690922346237717,
       "act_product_holding": 0.2700308396250416,
-      "scene_booth": 0.23232096424783982,
-      "scene_closeup_bottle": 0.19419929864230867
+      "act_booth_view": 0.23232096424783982,
+      "act_product_closeup": 0.19419929864230867
     }
   },
   "C0320.MP4": {
@@ -310,8 +328,8 @@
       "act_combing": 0.23506958488380736,
       "act_shampoo": 0.24466491246453448,
       "act_product_holding": 0.27364874460399163,
-      "scene_booth": 0.2299975567336398,
-      "scene_closeup_bottle": 0.27045826918610094
+      "act_booth_view": 0.2299975567336398,
+      "act_product_closeup": 0.27045826918610094
     }
   },
   "C0312.MP4": {
@@ -331,8 +349,8 @@
       "act_combing": 0.19168213042087173,
       "act_shampoo": 0.13921553138161097,
       "act_product_holding": 0.18111462914120852,
-      "scene_booth": 0.16775571045315513,
-      "scene_closeup_bottle": 0.12291855153622405
+      "act_booth_view": 0.16775571045315513,
+      "act_product_closeup": 0.12291855153622405
     }
   },
   "C0317.MP4": {
@@ -352,8 +370,8 @@
       "act_combing": 0.24913119266036932,
       "act_shampoo": 0.21888416610775424,
       "act_product_holding": 0.2572771817632028,
-      "scene_booth": 0.20135148501779412,
-      "scene_closeup_bottle": 0.19122769668940623
+      "act_booth_view": 0.20135148501779412,
+      "act_product_closeup": 0.19122769668940623
     }
   },
   "C0314.MP4": {
@@ -373,8 +391,8 @@
       "act_combing": 0.19656209253166154,
       "act_shampoo": 0.1752501637789162,
       "act_product_holding": 0.23102442541730228,
-      "scene_booth": 0.19896021287203208,
-      "scene_closeup_bottle": 0.14516606725853487
+      "act_booth_view": 0.19896021287203208,
+      "act_product_closeup": 0.14516606725853487
     }
   },
   "C0307.MP4": {
@@ -394,8 +412,8 @@
       "act_combing": 0.23626451677215807,
       "act_shampoo": 0.2522188547446621,
       "act_product_holding": 0.258767280728859,
-      "scene_booth": 0.2528897639101415,
-      "scene_closeup_bottle": 0.2613651249155099
+      "act_booth_view": 0.2528897639101415,
+      "act_product_closeup": 0.2613651249155099
     }
   },
   "C0308.MP4": {
@@ -415,8 +433,8 @@
       "act_combing": 0.2391673671906428,
       "act_shampoo": 0.25734161673583394,
       "act_product_holding": 0.274145204468817,
-      "scene_booth": 0.2484853374930175,
-      "scene_closeup_bottle": 0.26113057368004744
+      "act_booth_view": 0.2484853374930175,
+      "act_product_closeup": 0.26113057368004744
     }
   },
   "C0318.MP4": {
@@ -436,8 +454,8 @@
       "act_combing": 0.25277723907039895,
       "act_shampoo": 0.2126244506018667,
       "act_product_holding": 0.23640996035932305,
-      "scene_booth": 0.20168847131538703,
-      "scene_closeup_bottle": 0.19025473407132862
+      "act_booth_view": 0.20168847131538703,
+      "act_product_closeup": 0.19025473407132862
     }
   },
   "C0310.MP4": {
@@ -457,8 +475,8 @@
       "act_combing": 0.21007178803819018,
       "act_shampoo": 0.21105036301887942,
       "act_product_holding": 0.253734309034856,
-      "scene_booth": 0.21824476858465397,
-      "scene_closeup_bottle": 0.2385742686466571
+      "act_booth_view": 0.21824476858465397,
+      "act_product_closeup": 0.2385742686466571
     }
   },
   "C0315.MP4": {
@@ -478,8 +496,8 @@
       "act_combing": 0.20867360055656284,
       "act_shampoo": 0.18395278308455054,
       "act_product_holding": 0.22858908594776256,
-      "scene_booth": 0.22109376241116296,
-      "scene_closeup_bottle": 0.15926089397143628
+      "act_booth_view": 0.22109376241116296,
+      "act_product_closeup": 0.15926089397143628
     }
   },
   "C0288.MP4": {
@@ -499,8 +517,8 @@
       "act_combing": 0.22257238231473328,
       "act_shampoo": 0.18554227564911369,
       "act_product_holding": 0.2241735967666499,
-      "scene_booth": 0.21382184660047143,
-      "scene_closeup_bottle": 0.1586444132533102
+      "act_booth_view": 0.21382184660047143,
+      "act_product_closeup": 0.1586444132533102
     }
   },
   "C0284.MP4": {
@@ -520,8 +538,8 @@
       "act_combing": 0.2381382689361146,
       "act_shampoo": 0.2528000189114658,
       "act_product_holding": 0.2733599047188227,
-      "scene_booth": 0.24969122673805977,
-      "scene_closeup_bottle": 0.2820701525222127
+      "act_booth_view": 0.24969122673805977,
+      "act_product_closeup": 0.2820701525222127
     }
   },
   "C0309.MP4": {
@@ -541,8 +559,8 @@
       "act_combing": 0.24996335488409238,
       "act_shampoo": 0.25489343853069346,
       "act_product_holding": 0.27273795610786944,
-      "scene_booth": 0.22821336109365326,
-      "scene_closeup_bottle": 0.2726927435144051
+      "act_booth_view": 0.22821336109365326,
+      "act_product_closeup": 0.2726927435144051
     }
   },
   "C0306.MP4": {
@@ -562,8 +580,8 @@
       "act_combing": 0.2505777776819728,
       "act_shampoo": 0.2480001832484151,
       "act_product_holding": 0.2970085327247586,
-      "scene_booth": 0.26849770908485926,
-      "scene_closeup_bottle": 0.2267062759115649
+      "act_booth_view": 0.26849770908485926,
+      "act_product_closeup": 0.2267062759115649
     }
   },
   "C0301.MP4": {
@@ -583,8 +601,8 @@
       "act_combing": 0.2631670104542107,
       "act_shampoo": 0.26125512722259425,
       "act_product_holding": 0.2974938602529844,
-      "scene_booth": 0.24428059425292598,
-      "scene_closeup_bottle": 0.22690372747025633
+      "act_booth_view": 0.24428059425292598,
+      "act_product_closeup": 0.22690372747025633
     }
   },
   "C0300.MP4": {
@@ -604,8 +622,8 @@
       "act_combing": 0.2680040339013201,
       "act_shampoo": 0.26648540599889414,
       "act_product_holding": 0.31565230046877574,
-      "scene_booth": 0.24790154769484643,
-      "scene_closeup_bottle": 0.23507953173510676
+      "act_booth_view": 0.24790154769484643,
+      "act_product_closeup": 0.23507953173510676
     }
   },
   "C0282.MP4": {
@@ -625,8 +643,8 @@
       "act_combing": 0.21815116284969396,
       "act_shampoo": 0.18431231061503237,
       "act_product_holding": 0.21602851002336418,
-      "scene_booth": 0.21276583811464594,
-      "scene_closeup_bottle": 0.1566553238161977
+      "act_booth_view": 0.21276583811464594,
+      "act_product_closeup": 0.1566553238161977
     }
   },
   "C0283.MP4": {
@@ -646,8 +664,8 @@
       "act_combing": 0.22476189208700553,
       "act_shampoo": 0.24803412238896216,
       "act_product_holding": 0.27109862668022233,
-      "scene_booth": 0.23554130926079944,
-      "scene_closeup_bottle": 0.2587241228881382
+      "act_booth_view": 0.23554130926079944,
+      "act_product_closeup": 0.2587241228881382
     }
   },
   "C0305.MP4": {
@@ -667,8 +685,8 @@
       "act_combing": 0.2508752318065186,
       "act_shampoo": 0.23343465944651287,
       "act_product_holding": 0.23370810445351492,
-      "scene_booth": 0.22390820239356463,
-      "scene_closeup_bottle": 0.17551135124147219
+      "act_booth_view": 0.22390820239356463,
+      "act_product_closeup": 0.17551135124147219
     }
   },
   "C0297.MP4": {
@@ -688,8 +706,8 @@
       "act_combing": 0.25066155811147306,
       "act_shampoo": 0.2647512404115173,
       "act_product_holding": 0.29410581689863496,
-      "scene_booth": 0.24829246721201714,
-      "scene_closeup_bottle": 0.194648462618202
+      "act_booth_view": 0.24829246721201714,
+      "act_product_closeup": 0.194648462618202
     }
   },
   "C0299.MP4": {
@@ -709,8 +727,8 @@
       "act_combing": 0.26166462528858025,
       "act_shampoo": 0.26731568139569867,
       "act_product_holding": 0.3001380941732049,
-      "scene_booth": 0.27166326502611227,
-      "scene_closeup_bottle": 0.23266047699691725
+      "act_booth_view": 0.27166326502611227,
+      "act_product_closeup": 0.23266047699691725
     }
   },
   "C0296.MP4": {
@@ -730,8 +748,8 @@
       "act_combing": 0.24592300321186678,
       "act_shampoo": 0.2579608919727666,
       "act_product_holding": 0.3041237709190867,
-      "scene_booth": 0.2488334779643676,
-      "scene_closeup_bottle": 0.22108819190169088
+      "act_booth_view": 0.2488334779643676,
+      "act_product_closeup": 0.22108819190169088
     }
   },
   "C0276.MP4": {
@@ -751,8 +769,8 @@
       "act_combing": 0.200110823184233,
       "act_shampoo": 0.1767518690273795,
       "act_product_holding": 0.2136371434798094,
-      "scene_booth": 0.19385921819235125,
-      "scene_closeup_bottle": 0.16140487599767306
+      "act_booth_view": 0.19385921819235125,
+      "act_product_closeup": 0.16140487599767306
     }
   },
   "C0302.MP4": {
@@ -772,8 +790,8 @@
       "act_combing": 0.20352050072805702,
       "act_shampoo": 0.17390331078683025,
       "act_product_holding": 0.20145686101676347,
-      "scene_booth": 0.21328723315343606,
-      "scene_closeup_bottle": 0.13470295843619012
+      "act_booth_view": 0.21328723315343606,
+      "act_product_closeup": 0.13470295843619012
     }
   },
   "C0298.MP4": {
@@ -793,8 +811,8 @@
       "act_combing": 0.2655556114039802,
       "act_shampoo": 0.2676673786891602,
       "act_product_holding": 0.30316865543441085,
-      "scene_booth": 0.2811617494906936,
-      "scene_closeup_bottle": 0.22672557727026482
+      "act_booth_view": 0.2811617494906936,
+      "act_product_closeup": 0.22672557727026482
     }
   },
   "C0294.MP4": {
@@ -814,8 +832,8 @@
       "act_combing": 0.25290848729062015,
       "act_shampoo": 0.24997111323585341,
       "act_product_holding": 0.28822266491074444,
-      "scene_booth": 0.2708390238802423,
-      "scene_closeup_bottle": 0.215466074570776
+      "act_booth_view": 0.2708390238802423,
+      "act_product_closeup": 0.215466074570776
     }
   },
   "C0295.MP4": {
@@ -835,8 +853,8 @@
       "act_combing": 0.2412558553323393,
       "act_shampoo": 0.2433425970976112,
       "act_product_holding": 0.29238482653803655,
-      "scene_booth": 0.2487486893159058,
-      "scene_closeup_bottle": 0.20973455571401645
+      "act_booth_view": 0.2487486893159058,
+      "act_product_closeup": 0.20973455571401645
     }
   },
   "C0278.MP4": {
@@ -856,8 +874,8 @@
       "act_combing": 0.21270648288907829,
       "act_shampoo": 0.16257877928638098,
       "act_product_holding": 0.20181253041453015,
-      "scene_booth": 0.19605374733928582,
-      "scene_closeup_bottle": 0.14855135513100795
+      "act_booth_view": 0.19605374733928582,
+      "act_product_closeup": 0.14855135513100795
     }
   },
   "C0293.MP4": {
@@ -877,8 +895,8 @@
       "act_combing": 0.2599266710927316,
       "act_shampoo": 0.26416874262791495,
       "act_product_holding": 0.28834594962040416,
-      "scene_booth": 0.28268284117222153,
-      "scene_closeup_bottle": 0.21294931810922765
+      "act_booth_view": 0.28268284117222153,
+      "act_product_closeup": 0.21294931810922765
     }
   },
   "C0271.MP4": {
@@ -898,8 +916,8 @@
       "act_combing": 0.22780185597684705,
       "act_shampoo": 0.188480457827151,
       "act_product_holding": 0.26597892504287113,
-      "scene_booth": 0.21804849797946532,
-      "scene_closeup_bottle": 0.17981884912239965
+      "act_booth_view": 0.21804849797946532,
+      "act_product_closeup": 0.17981884912239965
     }
   },
   "C0291.MP4": {
@@ -919,8 +937,8 @@
       "act_combing": 0.25231544725413213,
       "act_shampoo": 0.2596820263655788,
       "act_product_holding": 0.281962693566276,
-      "scene_booth": 0.2753829296022623,
-      "scene_closeup_bottle": 0.23546800142452706
+      "act_booth_view": 0.2753829296022623,
+      "act_product_closeup": 0.23546800142452706
     }
   },
   "C0290.MP4": {
@@ -940,8 +958,8 @@
       "act_combing": 0.25330519654126277,
       "act_shampoo": 0.26874661088076507,
       "act_product_holding": 0.2984079001290325,
-      "scene_booth": 0.2857086563338451,
-      "scene_closeup_bottle": 0.24221160782587076
+      "act_booth_view": 0.2857086563338451,
+      "act_product_closeup": 0.24221160782587076
     }
   },
   "C0292.MP4": {
@@ -961,8 +979,8 @@
       "act_combing": 0.2706217533627063,
       "act_shampoo": 0.27887023792174126,
       "act_product_holding": 0.2974461378506726,
-      "scene_booth": 0.29802653556422254,
-      "scene_closeup_bottle": 0.23458141163168428
+      "act_booth_view": 0.29802653556422254,
+      "act_product_closeup": 0.23458141163168428
     }
   },
   "C0281.MP4": {
@@ -982,8 +1000,8 @@
       "act_combing": 0.2273188235463565,
       "act_shampoo": 0.21908456844192944,
       "act_product_holding": 0.24515163006818425,
-      "scene_booth": 0.24869049080982472,
-      "scene_closeup_bottle": 0.18985073330071991
+      "act_booth_view": 0.24869049080982472,
+      "act_product_closeup": 0.18985073330071991
     }
   },
   "C0289.MP4": {
@@ -1003,8 +1021,8 @@
       "act_combing": 0.267305349303701,
       "act_shampoo": 0.2833999762150831,
       "act_product_holding": 0.2885298216213685,
-      "scene_booth": 0.2919551545850618,
-      "scene_closeup_bottle": 0.2357258055818221
+      "act_booth_view": 0.2919551545850618,
+      "act_product_closeup": 0.2357258055818221
     }
   },
   "C0279.MP4": {
@@ -1024,8 +1042,8 @@
       "act_combing": 0.2221711749343694,
       "act_shampoo": 0.17678589567211944,
       "act_product_holding": 0.22553143143938204,
-      "scene_booth": 0.20461360327783185,
-      "scene_closeup_bottle": 0.1577291560282284
+      "act_booth_view": 0.20461360327783185,
+      "act_product_closeup": 0.1577291560282284
     }
   },
   "C0285.MP4": {
@@ -1045,8 +1063,8 @@
       "act_combing": 0.23178336809986533,
       "act_shampoo": 0.20340217160089835,
       "act_product_holding": 0.2602589144795057,
-      "scene_booth": 0.23420484786786627,
-      "scene_closeup_bottle": 0.17348087831973355
+      "act_booth_view": 0.23420484786786627,
+      "act_product_closeup": 0.17348087831973355
     }
   },
   "C0287.MP4": {
@@ -1066,8 +1084,8 @@
       "act_combing": 0.24066586586232866,
       "act_shampoo": 0.21704087830117058,
       "act_product_holding": 0.24161305477397738,
-      "scene_booth": 0.20681632864731708,
-      "scene_closeup_bottle": 0.16238002528701745
+      "act_booth_view": 0.20681632864731708,
+      "act_product_closeup": 0.16238002528701745
     }
   },
   "C0273.MP4": {
@@ -1087,8 +1105,8 @@
       "act_combing": 0.2107882166714029,
       "act_shampoo": 0.17130418916573184,
       "act_product_holding": 0.20568156301173696,
-      "scene_booth": 0.18147919203096277,
-      "scene_closeup_bottle": 0.149442163504371
+      "act_booth_view": 0.18147919203096277,
+      "act_product_closeup": 0.149442163504371
     }
   },
   "C0266.MP4": {
@@ -1108,8 +1126,8 @@
       "act_combing": 0.23733971861774283,
       "act_shampoo": 0.21443386434898595,
       "act_product_holding": 0.23841633408945842,
-      "scene_booth": 0.22581689903241153,
-      "scene_closeup_bottle": 0.17064409687164653
+      "act_booth_view": 0.22581689903241153,
+      "act_product_closeup": 0.17064409687164653
     }
   },
   "C0280.MP4": {
@@ -1129,8 +1147,8 @@
       "act_combing": 0.2237573742402202,
       "act_shampoo": 0.20477260702714178,
       "act_product_holding": 0.23069765547924648,
-      "scene_booth": 0.222928617542524,
-      "scene_closeup_bottle": 0.16366932699334408
+      "act_booth_view": 0.222928617542524,
+      "act_product_closeup": 0.16366932699334408
     }
   },
   "C0277.MP4": {
@@ -1150,8 +1168,8 @@
       "act_combing": 0.2088113923930253,
       "act_shampoo": 0.18706982855959653,
       "act_product_holding": 0.2210863861679282,
-      "scene_booth": 0.19073733016422,
-      "scene_closeup_bottle": 0.1514743613204642
+      "act_booth_view": 0.19073733016422,
+      "act_product_closeup": 0.1514743613204642
     }
   },
   "C0270.MP4": {
@@ -1171,8 +1189,8 @@
       "act_combing": 0.19417812588310188,
       "act_shampoo": 0.15458106509025915,
       "act_product_holding": 0.17584906647895937,
-      "scene_booth": 0.19055249216591827,
-      "scene_closeup_bottle": 0.12429680207900601
+      "act_booth_view": 0.19055249216591827,
+      "act_product_closeup": 0.12429680207900601
     }
   },
   "C0274.MP4": {
@@ -1192,8 +1210,8 @@
       "act_combing": 0.20925903503356885,
       "act_shampoo": 0.16945201013606873,
       "act_product_holding": 0.1888017922697772,
-      "scene_booth": 0.17913959878101188,
-      "scene_closeup_bottle": 0.13578669693243123
+      "act_booth_view": 0.17913959878101188,
+      "act_product_closeup": 0.13578669693243123
     }
   },
   "C0275.MP4": {
@@ -1213,8 +1231,8 @@
       "act_combing": 0.21433747953952859,
       "act_shampoo": 0.1890284466965923,
       "act_product_holding": 0.21521857369340253,
-      "scene_booth": 0.19415148582485625,
-      "scene_closeup_bottle": 0.15975522086569105
+      "act_booth_view": 0.19415148582485625,
+      "act_product_closeup": 0.15975522086569105
     }
   },
   "C0272.MP4": {
@@ -1234,8 +1252,8 @@
       "act_combing": 0.209807734350253,
       "act_shampoo": 0.1666623468274236,
       "act_product_holding": 0.21325928145536205,
-      "scene_booth": 0.17340799089483327,
-      "scene_closeup_bottle": 0.14544970074649818
+      "act_booth_view": 0.17340799089483327,
+      "act_product_closeup": 0.14544970074649818
     }
   },
   "C0269.MP4": {
@@ -1255,8 +1273,8 @@
       "act_combing": 0.19311348664146452,
       "act_shampoo": 0.15747903574929006,
       "act_product_holding": 0.18562926910928085,
-      "scene_booth": 0.19734179969350596,
-      "scene_closeup_bottle": 0.12229574924804643
+      "act_booth_view": 0.19734179969350596,
+      "act_product_closeup": 0.12229574924804643
     }
   },
   "C0267.MP4": {
@@ -1276,8 +1294,8 @@
       "act_combing": 0.2621538394784218,
       "act_shampoo": 0.24760557403351158,
       "act_product_holding": 0.29184499450205315,
-      "scene_booth": 0.26001943153430973,
-      "scene_closeup_bottle": 0.22551656283588042
+      "act_booth_view": 0.26001943153430973,
+      "act_product_closeup": 0.22551656283588042
     }
   },
   "C0263.MP4": {
@@ -1297,8 +1315,8 @@
       "act_combing": 0.18963034392435987,
       "act_shampoo": 0.197952436783314,
       "act_product_holding": 0.17507492340975914,
-      "scene_booth": 0.2143816155463229,
-      "scene_closeup_bottle": 0.20519187326047045
+      "act_booth_view": 0.2143816155463229,
+      "act_product_closeup": 0.20519187326047045
     }
   },
   "C0268.MP4": {
@@ -1318,8 +1336,8 @@
       "act_combing": 0.2498252887966004,
       "act_shampoo": 0.2575250918318472,
       "act_product_holding": 0.26907426227946085,
-      "scene_booth": 0.26111431014174363,
-      "scene_closeup_bottle": 0.1960466059326738
+      "act_booth_view": 0.26111431014174363,
+      "act_product_closeup": 0.1960466059326738
     }
   },
   "C0264.MP4": {
@@ -1339,8 +1357,8 @@
       "act_combing": 0.20728319724537364,
       "act_shampoo": 0.2056909403424152,
       "act_product_holding": 0.20819920804620812,
-      "scene_booth": 0.22488263133311898,
-      "scene_closeup_bottle": 0.2254258818703574
+      "act_booth_view": 0.22488263133311898,
+      "act_product_closeup": 0.2254258818703574
     }
   },
   "C0265.MP4": {
@@ -1360,8 +1378,8 @@
       "act_combing": 0.22833770661543445,
       "act_shampoo": 0.2193191005064471,
       "act_product_holding": 0.2363802539804895,
-      "scene_booth": 0.2332153544670607,
-      "scene_closeup_bottle": 0.17661323885476318
+      "act_booth_view": 0.2332153544670607,
+      "act_product_closeup": 0.17661323885476318
     }
   }
 }
