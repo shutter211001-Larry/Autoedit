@@ -168,6 +168,11 @@ graph TD
 >          不要把背景音樂放在 Audio Track 1！將背景音樂 BGM 路由至 **Audio Track 2 (音軌 2)**，而 Audio Track 1 (音軌 1) 僅作為隨片相機現場雜音的暫存軌道。
 >          這使得 Reroll 引擎在清理現場雜音時，可以肆無忌憚地清空 Audio Track 1，而放在 Audio Track 2 的背景音樂 BGM 永遠毫髮無傷，從根本上杜絕了「音樂被誤刪」的物理天坑，同時完美符合了專業廣播級剪輯的音軌規劃黃金標準！
 >
+>      * **🚨 2026/05/20 DaVinci Resolve 新建空白時間軸單聲道軌道限制與 BGM 寫入失敗天坑 (Empty Timeline Track Count Landmine)**：
+>        * *地雷*：使用 `media_pool.CreateEmptyTimeline` 建立的全新空白時間軸，在 Resolve 中預設通常**只會配備 1 個音軌 (Audio Track 1)**。若此時直接呼叫 `AppendToTimeline` 並指定 `"trackIndex": 2`（將 BGM 寫入音軌 2），雖然 API 會回傳 True，但達芬奇在物理上會因為**音軌 2 不存在而靜默拒絕寫入**，導致背景音樂徹底憑空消失！
+>        * *防禦解法*：在建立完空白時間軸或 append BGM 之前，必須使用 `GetTrackCount("audio")` 查詢，若小於 2，則必須物理呼叫 `timeline.AddTrack("audio")` 顯式增加音軌，以確保音軌 2 存在，如此 BGM 靶向追加才能 100% 成功！
+>
+>
 >
 >
 > 4. **AddMarker 相對影格座標系天坑 (時間軸標記錯位)**

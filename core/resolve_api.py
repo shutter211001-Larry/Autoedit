@@ -74,6 +74,15 @@ def setup_project_and_timeline(resolve, project_name, timeline_name, is_vertical
         print(f"   ❌ Error: Failed to create timeline '{timeline_name}'.")
         return None, None, None, None
         
+    # 確保至少有兩個音軌，以便音軌分離
+    try:
+        audio_track_count = timeline.GetTrackCount("audio")
+        if audio_track_count < 2:
+            print("   ➕ [AI Track Setup] Adding Audio Track 2 for background music...")
+            timeline.AddTrack("audio")
+    except Exception as e:
+        print(f"   ⚠️ Failed to ensure Audio Track 2: {e}")
+        
     current_project.SetCurrentTimeline(timeline)
     
     # 4. GUI 強制重置聚焦
@@ -159,6 +168,21 @@ def append_bgm(media_pool, bgm_clip, best_t, max_duration_sec, timeline_start, f
     """
     Targeted appends the cropped background music clip to Audio Track 2.
     """
+    # 確保當前時間軸至少有兩個音軌
+    try:
+        import DaVinciResolveScript as dvr_script
+        resolve = dvr_script.scriptapp("Resolve")
+        if resolve:
+            current_project = resolve.GetProjectManager().GetCurrentProject()
+            timeline = current_project.GetCurrentTimeline()
+            if timeline:
+                audio_track_count = timeline.GetTrackCount("audio")
+                if audio_track_count < 2:
+                    print("   ➕ [AI Track Setup] Adding Audio Track 2 before appending BGM...")
+                    timeline.AddTrack("audio")
+    except Exception as e:
+        print(f"   ⚠️ Track addition check failed: {e}")
+
     print("   🎧 [AI Music Climax] Appending cropped BGM onto Audio Track 2...")
     bgm_to_append = [{
         "mediaPoolItem": bgm_clip,
