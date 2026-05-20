@@ -339,7 +339,8 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
     all_clips_in_pool = clip_folder.GetClipList() or []
     clip_map = {c.GetName().lower(): c for c in all_clips_in_pool}
     
-    available_pool = [c for c in clip_rankings if c["filename"].lower() in clip_map]
+    # Use all rankings as the candidate pool for Matchmaking, regardless of whether they are in Media Pool
+    available_pool = list(clip_rankings)
     final_clip_sequence = []
     
     print(f"🛡️  AI Aesthetic Gate active. Threshold: {aesthetic_threshold:.3f}")
@@ -359,7 +360,7 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
             
         if not available_pool:
             print("   ⚠️ Available unique pool exhausted! Recycling pool...")
-            available_pool = [c for c in clip_rankings if c["filename"].lower() in clip_map]
+            available_pool = list(clip_rankings)
             
         theme_similarities = [c[f"sim_{role}"] for c in available_pool]
         min_sim = min(theme_similarities) if theme_similarities else 0.0
@@ -418,7 +419,7 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
         a_grade = get_aesthetic_grade(best_candidate["aesthetic_score"])
         
         final_clip_sequence.append({
-            "item": clip_map[best_candidate["filename"].lower()],
+            "item": None,  # Will be mapped to Resolve MediaPoolItem after robust import
             "name": best_candidate["filename"],
             "role": role,
             "motion": best_candidate["motion_energy"],
@@ -427,6 +428,33 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
             "aesthetic_grade": a_grade,
             "path": best_candidate["path"]
         })
+        
+    # [Robust Selected-Only Import Defense]
+    # We only import the specific video files selected by the AI storyboarding to dramatically reduce overhead!
+    missing_paths = []
+    for chosen in final_clip_sequence:
+        fname = chosen["name"].lower()
+        if fname not in clip_map:
+            missing_paths.append(chosen["path"])
+            
+    if missing_paths:
+        missing_paths = list(set(missing_paths))
+        print(f"   📥 [Robust Import] Importing {len(missing_paths)} SELECTED video clips into Resolve Media Pool (Optimized)...")
+        media_pool.SetCurrentFolder(clip_folder)
+        imported = media_pool.ImportMedia(missing_paths)
+        if imported:
+            # Re-fetch clip list to populate updated clip_map
+            all_clips_in_pool = clip_folder.GetClipList() or []
+            clip_map = {c.GetName().lower(): c for c in all_clips_in_pool}
+            print(f"   🎉 Import successful! Total clips now in Media Pool: {len(clip_map)}")
+            
+    # Resolve and map the local items to Resolve MediaPoolItem objects
+    for chosen in final_clip_sequence:
+        fname = chosen["name"].lower()
+        if fname in clip_map:
+            chosen["item"] = clip_map[fname]
+        else:
+            print(f"   ⚠️ Warning: Selected clip '{chosen['name']}' could not be resolved in Media Pool.")
         
     print(f"   ✅ AI Storyboarding finished successfully ({len(final_clip_sequence)} cuts).")
     
@@ -540,10 +568,302 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
         print("❌ Error: Video append failed. Resolve returned None.")
         sys.exit(1)
 
+def run_reroll_engine(config_data, aesthetic_override=None):
+    """
+    Rerolls clips on Video Track 1 that have been manually colored 'Red' by the user.
+    """
+    print("\n" + "="*60)
+    print("🎬 AI FILM DIRECTOR — REROLL SMART REPLACEMENT ACTIVE...")
+    print("="*60)
+    
+    project_name = config_data.get("project_name")
+    timeline_name = config_data.get("timeline_name")
+    aesthetic_threshold = aesthetic_override if aesthetic_override is not None else config_data.get("aesthetic_threshold", 0.00)
+    is_vertical = config_data.get("source_footage_vertical", True)
+    
+    # 1. Initialize Connection
+    resolve = connect_to_resolve()
+    if not resolve:
+        sys.exit(1)
+        
+    project_manager = resolve.GetProjectManager()
+    current_project = project_manager.GetCurrentProject()
+    if not current_project or current_project.GetName() != project_name:
+        current_project = project_manager.LoadProject(project_name)
+        
+    if not current_project:
+        print(f"❌ Error: Project '{project_name}' could not be loaded.")
+        sys.exit(1)
+        
+    timeline = current_project.GetCurrentTimeline()
+    if not timeline or timeline.GetName() != timeline_name:
+        timeline = None
+        for i in range(1, current_project.GetTimelineCount() + 1):
+            tl = current_project.GetTimelineByIndex(i)
+            if tl and tl.GetName() == timeline_name:
+                timeline = tl
+                current_project.SetCurrentTimeline(tl)
+                break
+                
+    if not timeline:
+        print(f"❌ Error: Active timeline '{timeline_name}' not found. Please run 'run' first.")
+        sys.exit(1)
+        
+    fps = float(current_project.GetSetting("timelineFrameRate") or 24.0)
+    timeline_start = timeline.GetStartFrame()
+    
+    # 2. Get Video Track 1 clips
+    placed_clips = timeline.GetItemListInTrack("video", 1) or []
+    if not placed_clips:
+        print("❌ Error: Video Track 1 is empty. Nothing to reroll.")
+        sys.exit(1)
+        
+    # Detect which clips are Pink, Rose, or Red
+    red_clips_indices = []
+    used_filenames = []
+    
+    for idx, item in enumerate(placed_clips):
+        color = item.GetClipColor()
+        name = item.GetName().lower()
+        if color.lower() in ["red", "pink", "rose"]:
+            red_clips_indices.append(idx)
+        else:
+            used_filenames.append(name)
+            
+    if not red_clips_indices:
+        print("🎉 Note: No clips are colored 'Pink' or 'Rose' on Video Track 1. Nothing needs to be rerolled!")
+        print("💡 Tip: Go to DaVinci Resolve, right-click on the clip you want to change, set 'Clip Color' to 'Pink' or 'Rose', then run reroll again.")
+        return
+        
+    print(f"🎯 Detected {len(red_clips_indices)} clips colored 'Red' scheduled for smart replacement!")
+    
+    # Setup cache
+    cache_dir = os.path.join(root_dir, "cache")
+    pkl_path = os.path.join(cache_dir, "video_metadata.pkl")
+    cv_cache_path = os.path.join(cache_dir, ".cv_profile_cache.json")
+    
+    metadata_cache = load_metadata_cache(pkl_path)
+    if not metadata_cache:
+        print("❌ Error: video_metadata.pkl is missing. Please run 'precache' or 'run' first.")
+        sys.exit(1)
+        
+    # Load model and embeddings for prompt mapping
+    model, processor, dev = load_clip_model()
+    AESTHETIC_PROMPTS = {
+        "positive": "exquisite professional cinematography, perfect rule-of-thirds composition, beautiful balanced framing, high-end high-contrast commercial video, sharp clean focus on product packaging",
+        "negative": "unprofessional messy framing, ugly composition, chaotic clutter, blurry out of focus product, bad lighting, amateur crop, cut-off branding label"
+    }
+    prompt_embeddings, aesthetic_embeddings = encode_text_prompts(
+        model, processor, dev,
+        config_data.get("prompts"),
+        AESTHETIC_PROMPTS["positive"],
+        AESTHETIC_PROMPTS["negative"]
+    )
+    
+    clip_rankings = score_assets(metadata_cache, prompt_embeddings, aesthetic_embeddings)
+    
+    # Define score ranges
+    motion_energies = [c["motion_energy"] for c in clip_rankings]
+    min_motion = min(motion_energies) if motion_energies else 0.0
+    max_motion = max(motion_energies) if motion_energies else 1.0
+    motion_range = max_motion - min_motion if max_motion != min_motion else 1.0
+    
+    aesthetic_scores = [c["aesthetic_score"] for c in clip_rankings]
+    min_aesthetic = min(aesthetic_scores) if aesthetic_scores else -1.0
+    max_aesthetic = max(aesthetic_scores) if aesthetic_scores else 1.0
+    aesthetic_range = max_aesthetic - min_aesthetic if max_aesthetic != min_aesthetic else 1.0
+    
+    media_pool = current_project.GetMediaPool()
+    media_folder = config_data.get("media_folder_path")
+    clip_folder = get_resolve_folder(media_pool, media_folder)
+    
+    all_clips_in_pool = clip_folder.GetClipList() or []
+    clip_map = {c.GetName().lower(): c for c in all_clips_in_pool}
+    
+    # Process Reroll list
+    for target_idx in red_clips_indices:
+        target_item = placed_clips[target_idx]
+        old_name = target_item.GetName()
+        
+        # 1. Gather original properties
+        start_frame_timeline = target_item.GetStart()
+        end_frame_timeline = target_item.GetEnd()
+        duration_timeline = end_frame_timeline - start_frame_timeline
+        
+        # Detect role based on timeline position
+        t_sec = (start_frame_timeline - timeline_start) / fps
+        
+        if t_sec < 5.0:
+            role = "setup"
+            original_color = "Navy"
+        elif t_sec < 12.0:
+            role = "detail"
+            original_color = "Yellow"
+        elif t_sec < 25.0:
+            role = "catwalk"
+            original_color = "Orange"
+        else:
+            role = "finale"
+            original_color = "Purple"
+            
+        print(f"\n⚡ Rerolling Clip #{target_idx+1} '{old_name}' | Role: {role.upper()} | Dur: {duration_timeline} frames...")
+        
+        # Determine ideal motion energy based on duration
+        if duration_timeline <= 12:
+            ideal_motion = 0.9
+        elif duration_timeline >= 36:
+            ideal_motion = 0.1
+        else:
+            ideal_motion = 0.9 - ((duration_timeline - 12) / 24.0) * 0.8
+            ideal_motion = max(0.1, min(0.9, ideal_motion))
+            
+        # Build available candidate pool excluding already used clips and the old clip itself
+        available_pool = [
+            c for c in clip_rankings 
+            if c["filename"].lower() != old_name.lower() and c["filename"].lower() not in used_filenames
+        ]
+        
+        if not available_pool:
+            available_pool = [c for c in clip_rankings if c["filename"].lower() != old_name.lower()]
+            
+        theme_similarities = [c[f"sim_{role}"] for c in available_pool]
+        min_sim = min(theme_similarities) if theme_similarities else 0.0
+        max_sim = max(theme_similarities) if theme_similarities else 1.0
+        sim_range = max_sim - min_sim if max_sim != min_sim else 1.0
+        
+        best_candidate = None
+        best_score = -9999.0
+        
+        for candidate in available_pool:
+            norm_motion = (candidate["motion_energy"] - min_motion) / motion_range
+            norm_sim = (candidate[f"sim_{role}"] - min_sim) / sim_range
+            motion_score = 1.0 - abs(norm_motion - ideal_motion)
+            norm_aesthetic = (candidate["aesthetic_score"] - min_aesthetic) / aesthetic_range
+            
+            total_score = 0.5 * norm_sim + 0.2 * motion_score + 0.3 * norm_aesthetic
+            
+            if candidate["aesthetic_score"] < aesthetic_threshold:
+                total_score -= 5.0
+            if candidate["motion_energy"] >= 10.5:
+                total_score -= 3.0
+                
+            if total_score > best_score:
+                best_score = total_score
+                best_candidate = candidate
+                
+        if not best_candidate:
+            print(f"   ⚠️ Could not find a suitable candidate clip for Reroll.")
+            continue
+            
+        # Target Import if needed
+        fname = best_candidate["filename"].lower()
+        if fname not in clip_map:
+            print(f"   📥 [Robust Import] Importing replacement clip '{best_candidate['filename']}'...")
+            media_pool.SetCurrentFolder(clip_folder)
+            imported = media_pool.ImportMedia([best_candidate["path"]])
+            if imported:
+                all_clips_in_pool = clip_folder.GetClipList() or []
+                clip_map = {c.GetName().lower(): c for c in all_clips_in_pool}
+                
+        if fname not in clip_map:
+            print(f"   ❌ Error: Replacement clip '{best_candidate['filename']}' could not be imported.")
+            continue
+            
+        new_clip_item = clip_map[fname]
+        
+        # Calculate rolling in point
+        try:
+            fps_prop = new_clip_item.GetClipProperty("FPS")
+            src_fps = float(fps_prop) if fps_prop else 24.0
+        except Exception:
+            src_fps = 24.0
+            
+        scale_factor = src_fps / fps
+        duration_source = int(math.ceil(duration_timeline * scale_factor))
+        
+        frames_prop = new_clip_item.GetClipProperty("Frames")
+        total_frames = int(frames_prop) if (frames_prop and frames_prop.isdigit()) else 240
+        
+        is_static = (role in ["setup", "finale"])
+        file_path = best_candidate["path"]
+        
+        if not is_static and file_path and os.path.exists(file_path):
+            src_start = find_optimal_stable_unidirectional_window(
+                file_path,
+                duration_source,
+                src_fps,
+                cv_cache_path
+            )
+        else:
+            guard_band = int(total_frames * 0.15)
+            safe_total = total_frames - 2 * guard_band
+            if safe_total >= duration_source:
+                src_start = guard_band + (safe_total - duration_source) // 2
+            else:
+                src_start = max(0, (total_frames - duration_source) // 2)
+                
+        src_end = src_start + duration_source
+        
+        # Delete old clip
+        timeline.DeleteClips([target_item])
+        
+        # Append new clip targeted
+        append_data = [{
+            "mediaPoolItem": new_clip_item,
+            "startFrame": int(src_start),
+            "endFrame": int(src_end),
+            "recordFrame": int(start_frame_timeline),
+            "trackIndex": 1,
+            "mediaType": 1
+        }]
+        
+        appended = media_pool.AppendToTimeline(append_data)
+        if appended:
+            time.sleep(0.2)
+            fresh_placed_clips = timeline.GetItemListInTrack("video", 1) or []
+            newly_inserted_item = None
+            for fresh_item in fresh_placed_clips:
+                if abs(fresh_item.GetStart() - start_frame_timeline) <= 1:
+                    newly_inserted_item = fresh_item
+                    break
+                    
+            if newly_inserted_item:
+                from core.director_rules import get_transform_properties
+                zoom_val, rotation_val, _ = get_transform_properties(target_idx, role, is_vertical)
+                
+                try:
+                    newly_inserted_item.SetProperty("ZoomX", zoom_val)
+                    newly_inserted_item.SetProperty("ZoomY", zoom_val)
+                    newly_inserted_item.SetProperty("RotationAngle", rotation_val)
+                    newly_inserted_item.SetClipColor(original_color)
+                except Exception as e:
+                    print(f"   ⚠️ Failed to set properties for replaced clip: {e}")
+                    
+                # Re-clone Color Nodes from Clip #1 to this new clip
+                if len(fresh_placed_clips) > 1 and target_idx > 0:
+                    try:
+                        source_clip = fresh_placed_clips[0]
+                        source_clip.CopyGrades([newly_inserted_item])
+                        print(f"   👑 SUCCESS: Re-cloned Master Color Node to replaced clip!")
+                    except Exception as e:
+                        print(f"   ⚠️ Re-grade clone failed: {e}")
+                        
+                print(f"   🎉 SUCCESS: Replaced '{old_name}' with '{best_candidate['filename']}' seamlessly!")
+                used_filenames.append(fname)
+            else:
+                print(f"   ❌ Error: Appended succeeded but could not locate the new item.")
+        else:
+            print(f"   ❌ Error: Targeted append failed for reroll clip.")
+            
+    # Clear scratch audio fields and refresh
+    clear_scratch_audio(timeline)
+    force_gui_refresh(resolve)
+    print("\n🎉 SUCCESS! AI Director Reroll Smart Replacement successfully finished!")
+
 def main():
     parser = argparse.ArgumentParser(description="🎬 AI智慧導演剪輯引擎 (AI Film Director Engine CLI)")
     parser.add_argument("--config", "-c", type=str, required=True, help="Path to JSON configuration file")
-    parser.add_argument("--action", "-a", type=str, choices=["run", "diagnose", "precache"], default="run", help="Action to execute")
+    parser.add_argument("--action", "-a", type=str, choices=["run", "diagnose", "precache", "reroll"], default="run", help="Action to execute")
     parser.add_argument("--threshold", "-t", type=float, default=None, help="Dynamic CLIP aesthetic score threshold override (e.g. 0.00)")
     parser.add_argument("--vertical", "-v", type=str, choices=["true", "false"], default=None, help="Force override vertical video mapping setting")
     
@@ -574,6 +894,8 @@ def main():
         run_precache(config_data)
     elif args.action == "run":
         run_editing_engine(config_data, args.threshold, vertical_override)
+    elif args.action == "reroll":
+        run_reroll_engine(config_data, args.threshold)
 
 if __name__ == "__main__":
     main()

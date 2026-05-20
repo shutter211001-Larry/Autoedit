@@ -89,7 +89,8 @@ def score_assets(metadata_cache, prompt_embeddings, aesthetic_embeddings):
         record = {
             "filename": filename,
             "path": meta["path"],
-            "aesthetic_score": aesthetic_score
+            "aesthetic_score": aesthetic_score,
+            "motion_energy": meta.get("motion_energy", 0.0)
         }
         for theme in prompt_embeddings.keys():
             record[f"sim_{theme}"] = sims[theme]

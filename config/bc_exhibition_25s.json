@@ -1,0 +1,34 @@
+{
+  "project_name": "2605_BCbonacure",
+  "timeline_name": "AI_Exhibition_25s",
+  "aspect_ratio": "9:16",
+  "source_footage_vertical": true,
+  "media_folder_path": "G:\\共用雲端硬碟\\專業髮品\\04影音部\\Larry\\Schwarzkopf\\260511\\Video\\D2\\PRIVATE\\M4ROOT\\CLIP",
+  "bgm_path": "G:\\共用雲端硬碟\\專業髮品\\04影音部\\Larry\\Music\\Indian Walk - Nico Staf.mp3",
+  "duration_seconds": 25.0,
+  "aesthetic_threshold": 0.00,
+  "prompts": {
+    "setup": "exquisite high-end exhibition booth setup, modern luxury brand presentation display counter, hair salon venue, professional environment",
+    "detail": "close-up of elegant cosmetic product bottle packaging, luxury brand logo label details, aesthetic product presentation close-up, hair essence styling details",
+    "catwalk": "fashion model presenting premium cosmetic product, slow motion product showcase, elegant product rotation performance, professional styling exhibition stage",
+    "finale": "grand finale branding product presentation close-up, premium cosmetic bottle showcase with logo, professional high-end studio lighting display"
+  },
+  "outro_logos": [
+    {
+      "name": "BC_2018_LOGO.png",
+      "track": 2,
+      "zoom": 0.3,
+      "pan": -180.0,
+      "tilt": -250.0,
+      "duration_frames": 120
+    },
+    {
+      "name": "SKP_Logo_schwarz00000001.jpg",
+      "track": 3,
+      "zoom": 0.3,
+      "pan": 180.0,
+      "tilt": -250.0,
+      "duration_frames": 120
+    }
+  ]
+}

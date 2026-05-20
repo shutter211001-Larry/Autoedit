@@ -65,8 +65,42 @@ graph TD
     * `run`：執行一鍵自動化卡點影片拼裝。
     * `diagnose`：呼叫 `diagnostics/track_diagnoser.py`，印出當前時間軸所有軌道片段、縮放、旋轉及 Logo 參數。
     * `precache`：針對特定素材資料夾重新編譯並快取運動特徵。
+    * `reroll`：對時間軸上被手動標記為「紅色 (Red)」的片段進行增量式單鏡頭智慧重選替換。
   * `-t, --threshold [FLOAT]`：動態覆寫 CLIP 智慧審美硬門檻。設定 `0.00` 為極致高質感篩選（僅選 `🌟 Premium` 與 `✨ Good`）；設定 `-0.02` 為平衡篩選。
   * `-v, --vertical [BOOL]`：覆寫直式/橫式素材原生映射狀態（`true`/`false`）。
+
+### 7. 達芬奇 Clip Color 粉紅/玫瑰標記單鏡頭智慧重選機制 (Pink/Rose Marker Reroll)
+
+* **核心背景與痛點**：
+  在傳統的自動化 AI 剪輯中，如果導演對某個鏡頭（例如第 4 鏡）的選材或運鏡不滿意，過去只能修改 Prompt 後「全部重剪」，這會摧毀時間軸上其他已經完美滿意的卡點、運鏡與調色。
+* **智慧增量重選解決方案 (Reroll Engine)**：
+  本系統首創「達芬奇時間軸 Clip Color 智慧重選技術」。由於達芬奇內建 API 的 16 種標準色中不包含 "Red" (紅色)，因此系統完美升級為掃描 **"Pink" (粉紅色)** 或 **"Rose" (玫瑰紅)**。導演只需在達芬奇剪輯頁面中，將不喜歡的片段右鍵標記顏色為「Pink」或「Rose」，接著透過 CLI 執行：
+  ```bash
+  python director.py --config config/bc_exhibition_25s.json --action reroll
+  ```
+  引擎會立刻接管並自動執行增量式物理替換，不破壞時間軸的其餘部分。
+
+* **技術核心工作流與防禦協議**：
+  1. **警告標記檢測 (Pink/Rose Clip Detection)**：
+     讀取 Video Track 1 的所有片段，取得其顏色設定。若 `color` 符合 `["red", "pink", "rose"]`，則將其索引及物理屬性（`startFrame`、`endFrame`、`duration` 等）記錄為重選目標。
+  2. **敘事角色自動還原 (Narrative Role Recovery)**：
+     根據警告標記 clip 在時間軸上的起始秒數落點（`t_sec = (start_frame - timeline_start) / fps`），反向推導其原本所屬的敘事段落與軌道染色：
+     - `t_sec < 5.0` ➔ 角色：`setup` ➔ 還原染色：`Navy`
+     - `t_sec < 12.0` ➔ 角色：`detail` ➔ 還原染色：`Yellow`
+     - `t_sec < 25.0` ➔ 角色：`catwalk` ➔ 還原染色：`Orange`
+     - 其餘 ➔ 角色：`finale` ➔ 還原染色：`Purple`
+  3. **動態去重防禦 (Anti-Repetition Defense)**：
+     自動收集時間軸上所有**非標記**片段的影片名稱，將它們寫入 `used_filenames` 庫，在 Matchmaking 時強制將其自候選名單排除，保證重選後絕不出現畫面重複！
+  4. **語意與運動多維篩選 (Multidimensional Semantic & Motion Matchmaking)**：
+     從特徵快取庫中尋找與該敘事角色 Prompt 相似度最高，且其運動方差與該片段剪擊時長最契合（長片段配低運鏡，短片段配高運鏡）之「完美補位影片」。
+  5. **黃金 In 點 CV 檢索 (Golden In-Point Alignment)**：
+     對於新選中的影片，呼叫 `find_optimal_stable_unidirectional_window`，在扣除首尾 15% 安全防護帶的黃金 70% 中段，藉由滾動光流方差與 1D 水平投影剖面互相關，自動檢索出運鏡最平穩、方向最單一的區間作為新 In 點。
+  6. **物理原位 Target Append (Targeted Physical Replacement)**：
+     先在時間軸物理刪除舊的 Pink/Rose Clip。接著包裝 `AppendToTimeline` 字典，帶入精準的 `"recordFrame"` (原起點)、`"trackIndex": 1`、`"mediaType": 1`。這是達芬奇 API 中極少數能 100% 穩定原位覆蓋且不破壞前後卡點的物理寫入方式！
+  7. **幾何、染色與大師調色自動還原**：
+     - 幾何參數還原：根據片段索引與角色，重新計算並寫入 ZoomX、ZoomY 與 RotationAngle 變焦與旋轉參數。
+     - 還原軌道顏色：將重選後的 Clip 從 Pink/Rose 改回對應的還原染色（Navy/Yellow/Orange/Purple）。
+     - 調色克隆 (CopyGrades)：自動呼叫 `source_clip.CopyGrades([newly_inserted_item])`，將第一鏡的大師級 Node 調色克隆給新替換的片段，實現色彩 100% 無縫統一！
 
 ---
 
