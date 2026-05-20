@@ -925,6 +925,13 @@ def run_reroll_engine(config_data, aesthetic_override=None):
             )
             total_score += continuity_bonus
             
+            # 產品優先加權機制：優先換成未被使用的「純產品包裝/特寫畫面」
+            anno = solver.annotations.get(candidate["filename"], {})
+            cand_char = anno.get("character", "")
+            cand_act = anno.get("action", "")
+            if cand_act in ["product_holding", "product_closeup"] or cand_char == "product_or_booth":
+                total_score += 15.0  # 強力加權以保證選中優質產品畫面
+            
             if total_score > best_score:
                 best_score = total_score
                 best_candidate = candidate
