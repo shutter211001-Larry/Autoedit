@@ -41,20 +41,14 @@ def setup_project_and_timeline(resolve, project_name, timeline_name, is_vertical
         
     media_pool = current_project.GetMediaPool()
     
-    # 1. 整理舊同名時間軸
+    # 1. 整理舊同名時間軸 (保留完整內容並重新命名為備份)
     timeline_count = current_project.GetTimelineCount()
     for i in range(1, timeline_count + 1):
         tl = current_project.GetTimelineByIndex(i)
         if tl and tl.GetName() == timeline_name:
-            print(f"   ⚠️ 偵測到已存在同名時間軸 '{timeline_name}'，將清空並重新命名舊備份...")
-            current_project.SetCurrentTimeline(tl)
-            for track_type in ["video", "audio"]:
-                tc = tl.GetTrackCount(track_type)
-                for t_idx in range(1, tc + 1):
-                    items = tl.GetItemListInTrack(track_type, t_idx)
-                    if items:
-                        tl.DeleteClips(items)
-            tl.SetName(f"{timeline_name}_Backup_{int(time.time())}")
+            backup_name = f"{timeline_name}_Backup_{int(time.time())}"
+            print(f"   ⚠️ 偵測到已存在同名時間軸 '{timeline_name}'，將其完整內容備份並重新命名為 '{backup_name}'...")
+            tl.SetName(backup_name)
             break
             
     # 2. 設定解像度
