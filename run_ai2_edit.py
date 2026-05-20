@@ -227,6 +227,8 @@ def run_ai2_edit():
     ASSETS_DIR = r"G:\共用雲端硬碟\專業髮品\04影音部\Larry\Schwarzkopf\260511\Video\D2\PRIVATE\M4ROOT\CLIP"
     FOLDER_STRUCTURE = ["Video", "D2", "CLIP"]
     MAX_DURATION_SEC = 30.0
+    SOURCE_FOOTAGE_VERTICAL = True  # 素材是否已為直式？ 若為直式則縮放補償為 1.0，若為橫式則為 3.16
+    
     
     project_manager = resolve.GetProjectManager()
     current_project = project_manager.GetCurrentProject()
@@ -429,28 +431,48 @@ def run_ai2_edit():
         processor = CLIPProcessor.from_pretrained(smart_asset_selector.MODEL_NAME)
         model.eval()
         
+        # A. 故事線編碼
         prompt_keys = list(PROMPTS.keys())
         prompt_texts = [PROMPTS[k] for k in prompt_keys]
         
+        # B. 智慧審美對比詞編碼
+        AESTHETIC_PROMPTS = {
+            "positive": "exquisite professional cinematography, perfect rule-of-thirds composition, beautiful balanced framing, high-end high-contrast commercial video, sharp clean focus on product packaging",
+            "negative": "unprofessional messy framing, ugly composition, chaotic clutter, blurry out of focus product, bad lighting, amateur crop, cut-off branding label"
+        }
+        aesthetic_keys = list(AESTHETIC_PROMPTS.keys())
+        aesthetic_texts = [AESTHETIC_PROMPTS[k] for k in aesthetic_keys]
+        
+        all_texts = prompt_texts + aesthetic_texts
+        
         with torch.no_grad():
-            inputs = processor(text=prompt_texts, return_tensors="pt", padding=True).to(device)
+            inputs = processor(text=all_texts, return_tensors="pt", padding=True).to(device)
             text_features = model.get_text_features(**inputs)
             text_embeddings = text_features / text_features.norm(p=2, dim=-1, keepdim=True)
             text_embeddings_np = text_embeddings.cpu().numpy()
             
+        # 分配編碼向量
         prompt_embeddings = {prompt_keys[i]: text_embeddings_np[i] for i in range(len(prompt_keys))}
-        print("   ✅ Premium product-centric narrative prompts mapped successfully via CLIP!")
+        aesthetic_embeddings = {aesthetic_keys[i]: text_embeddings_np[len(prompt_keys) + i] for i in range(len(aesthetic_keys))}
+        
+        print("   ✅ Premium narrative prompts mapped successfully via CLIP!")
+        print("   ✅ AI Aesthetic Gate (Composition Scoring) prompts mapped successfully via CLIP!")
     except Exception as e:
         print(f"❌ CLIP text embedding extraction failed: {e}")
         sys.exit(1)
         
-    # 計算各影片與這四類故事階段的語義相似度
+    # 計算各影片與這四類故事階段的語義相似度，以及視覺美學與構圖評分
     clip_rankings = []
     for filename, meta in metadata_cache.items():
         img_emb = np.array(meta["embedding"])
         sims = {}
         for theme, emb in prompt_embeddings.items():
             sims[theme] = float(np.dot(img_emb, emb))
+            
+        # 計算視覺審美構圖得分 (正向相似度 - 負向相似度)
+        sim_pos = float(np.dot(img_emb, aesthetic_embeddings["positive"]))
+        sim_neg = float(np.dot(img_emb, aesthetic_embeddings["negative"]))
+        aesthetic_score = sim_pos - sim_neg
             
         clip_rankings.append({
             "filename": filename,
@@ -460,7 +482,8 @@ def run_ai2_edit():
             "sim_catwalk": sims["catwalk"],
             "sim_finale": sims["finale"],
             "motion_energy": meta["motion_energy"],
-            "duration": meta["duration"]
+            "duration": meta["duration"],
+            "aesthetic_score": aesthetic_score
         })
         
     # 讀取時間軸標記點，產生切點區間
@@ -543,6 +566,12 @@ def run_ai2_edit():
     max_motion = max(motion_energies) if motion_energies else 1.0
     motion_range = max_motion - min_motion if max_motion != min_motion else 1.0
     
+    # 智慧導演審美門檻動態縮放範圍
+    aesthetic_scores = [c["aesthetic_score"] for c in clip_rankings]
+    min_aesthetic = min(aesthetic_scores) if aesthetic_scores else -1.0
+    max_aesthetic = max(aesthetic_scores) if aesthetic_scores else 1.0
+    aesthetic_range = max_aesthetic - min_aesthetic if max_aesthetic != min_aesthetic else 1.0
+    
     # 建立媒體池項目映射表
     all_clips_in_pool = clip_folder.GetClipList()
     clip_map = {c.GetName().lower(): c for c in all_clips_in_pool}
@@ -594,9 +623,17 @@ def run_ai2_edit():
             norm_sim = (candidate["sim_" + role] - min_sim) / sim_range
             motion_score = 1.0 - abs(norm_motion - ideal_motion)
             
-            # 得分模型：70% 語義 + 30% 運動能量
-            total_score = 0.7 * norm_sim + 0.3 * motion_score
+            # 構圖美學打分
+            norm_aesthetic = (candidate["aesthetic_score"] - min_aesthetic) / aesthetic_range
             
+            # 得分模型：50% 語義 + 20% 運動能量 + 30% 構圖美學 (黃金三角)
+            total_score = 0.5 * norm_sim + 0.2 * motion_score + 0.3 * norm_aesthetic
+            
+            # AI 智慧導演審美門檻 (Aesthetic Gate)
+            AESTHETIC_GATE_THRESHOLD = 0.00
+            if candidate["aesthetic_score"] < AESTHETIC_GATE_THRESHOLD:
+                total_score -= 5.0  # 審美不及格給予毀滅性重罰，直接過濾
+                
             if is_near_dup:
                 total_score -= 2.0
             if candidate["motion_energy"] >= 10.5:
@@ -613,12 +650,26 @@ def run_ai2_edit():
                 best_candidate_idx = pool_idx
                 
         best_candidate = available_pool.pop(best_candidate_idx)
+        
+        # 決定美學等級標籤
+        a_score = best_candidate["aesthetic_score"]
+        if a_score >= 0.04:
+            a_grade = "🌟 Premium"
+        elif a_score >= 0.00:
+            a_grade = "✨ Good"
+        elif a_score >= -0.02:
+            a_grade = "👌 Acceptable (Filtered by Aesthetic Gate)"
+        else:
+            a_grade = "⚠️ Bad-Filtered (Rescued)"
+            
         final_clip_sequence.append({
             "item": clip_map[best_candidate["filename"].lower()],
             "name": best_candidate["filename"],
             "role": role,
             "motion": best_candidate["motion_energy"],
             "similarity": best_candidate["sim_" + role],
+            "aesthetic_score": a_score,
+            "aesthetic_grade": a_grade,
             "path": best_candidate["path"]
         })
         
@@ -687,7 +738,7 @@ def run_ai2_edit():
         })
         
         if idx < 5 or idx == len(cut_intervals) - 1:
-            print(f"   [Narrative Arc #{idx+1}] Frame: {start_f}➔{end_f} | Role: {role.upper()} | Similarity: {clip_data['similarity']:.3f} | Motion: {clip_data['motion']:.1f} | Clip: '{clip_data['name']}'")
+            print(f"   [Narrative Arc #{idx+1}] Frame: {start_f}➔{end_f} | Role: {role.upper()} | Similarity: {clip_data['similarity']:.3f} | Motion: {clip_data['motion']:.1f} | Aesthetic: {clip_data['aesthetic_score']:.3f} ({clip_data['aesthetic_grade']}) | Clip: '{clip_data['name']}'")
         elif idx == 5:
             print("   ...")
             
@@ -839,8 +890,8 @@ def run_ai2_edit():
                 zoom_val = 1.20
                 rotation_val = 0.0
                 
-            # 套用 9:16 直式裁切縮放補償 (16:9 橫向素材塞入 9:16 直式時間軸需要乘以 3.16 放大填滿)
-            VERTICAL_CROP_ZOOM = 3.16
+            # 套用 9:16 直式裁切縮放補償 (橫式 16:9 需放大 3.16 倍填滿，直式素材則免放大，維持 1.0)
+            VERTICAL_CROP_ZOOM = 1.0 if SOURCE_FOOTAGE_VERTICAL else 3.16
             zoom_val = zoom_val * VERTICAL_CROP_ZOOM
             
             try:
