@@ -50,6 +50,24 @@ graph TD
 ### 5. 全域運動特徵永久快取系統
 * 運動、平穩度與方向特徵綁定檔案絕對路徑，持久化寫入 **`.cv_profile_cache.json`**。二次編譯或調整影片時長時，直接讀取快取，全片 35 個鏡頭的剪輯可在 **0.01 秒**內瞬間完成。
 
+### 6. 工業級重構架構與 CLI 統一控制引擎 (Unified CLI Director Engine)
+* **核心配置解耦**：將專案特定的變數（BGM 路徑、影片規格、故事線 prompt、Logo 幾何參數等）完全抽離至 `config/` 資料夾下的 JSON 設定檔中，實現「核心引擎代碼不動，唯以設定配置運作」。
+* **`core/` 模組化封裝**：
+  * `resolve_api.py`：封裝達芬奇時間軸重建、物理 GUI 跳轉聚焦及影片拼接 API。
+  * `beat_detector.py`：封裝 FFmpeg 快速轉碼、高潮段落識別及 BPM 對拍演算法。
+  * `aesthetic_gate.py`：整合本地 CLIP 模型，進行正負美學對比評分與硬性門檻過濾。
+  * `cv_analyzer.py`：實現雙核 CV 滾動平穩度方差與單向互相關運動檢索。
+  * `director_rules.py`：承載運鏡變焦（Zoom/Rotation/Pan）與 CopyGrades 調色複製規則。
+* **統一 CLI 入口 `director.py`**：
+  不論進行何種操作，均呼叫 `python director.py`，支持以下關鍵指令參數：
+  * `-c, --config [FILE]`：指定影片專案 JSON 設定檔（例如：`config/bc_bonacure_30s.json`）。
+  * `-a, --action [ACTION]`：
+    * `run`：執行一鍵自動化卡點影片拼裝。
+    * `diagnose`：呼叫 `diagnostics/track_diagnoser.py`，印出當前時間軸所有軌道片段、縮放、旋轉及 Logo 參數。
+    * `precache`：針對特定素材資料夾重新編譯並快取運動特徵。
+  * `-t, --threshold [FLOAT]`：動態覆寫 CLIP 智慧審美硬門檻。設定 `0.00` 為極致高質感篩選（僅選 `🌟 Premium` 與 `✨ Good`）；設定 `-0.02` 為平衡篩選。
+  * `-v, --vertical [BOOL]`：覆寫直式/橫式素材原生映射狀態（`true`/`false`）。
+
 ---
 
 ## 🗺️ 第二區塊：達芬奇 DaVinci Resolve 21 API 常用方法對照圖 (API Map Reference)
