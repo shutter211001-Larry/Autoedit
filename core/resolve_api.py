@@ -157,20 +157,20 @@ def append_video_sequence(media_pool, clips_to_append):
 
 def append_bgm(media_pool, bgm_clip, best_t, max_duration_sec, timeline_start, fps):
     """
-    Targeted appends the cropped background music clip to Audio Track 1.
+    Targeted appends the cropped background music clip to Audio Track 2.
     """
-    print("   🎧 [AI Music Climax] Appending cropped BGM onto Audio Track 1...")
+    print("   🎧 [AI Music Climax] Appending cropped BGM onto Audio Track 2...")
     bgm_to_append = [{
         "mediaPoolItem": bgm_clip,
         "startFrame": int(best_t * fps),
         "endFrame": int((best_t + max_duration_sec) * fps),
         "recordFrame": int(timeline_start),
-        "trackIndex": 1,
+        "trackIndex": 2,
         "mediaType": 2
     }]
     success = media_pool.AppendToTimeline(bgm_to_append)
     if success:
-        print("   🎉 SUCCESS: Crop BGM placed perfectly on Audio Track 1!")
+        print("   🎉 SUCCESS: Crop BGM placed perfectly on Audio Track 2!")
         return True
     else:
         print("   ❌ Error: Crop BGM targeted append returned None.")

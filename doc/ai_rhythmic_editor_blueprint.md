@@ -156,12 +156,18 @@ graph TD
 >      1. **完全清空軌道**：利用 `timeline.DeleteClips` 將所有視訊與音訊軌徹底刪空，起點歸零。
 >      2. **順序拼接影片**：在時間軸全空下順序拼接影片（不傳 recordFrame），影片會 100% 從起點（第 `86400` 影格）開始無縫排版。
 >      3. **清除相機現場音**：清空隨影片追加自動生成在 Audio Track 1 上的現場雜音。
->      4. **音樂靶向追加**：定位 BGM 素材，使用 **Target Append 模式**（即傳入字典中包含 `"recordFrame": timeline_start`, `"trackIndex": 1`, `"mediaType": 2`），強行將 BGM 置入音軌 1 起點（`86400`），完美對齊。
+>      4. **音樂靶向追加**：定位 BGM 素材，使用 **Target Append 模式**（即傳入字典中包含 `"recordFrame": timeline_start`, `"trackIndex": 2`, `"mediaType": 2`），強行將 BGM 置入**音軌 2** 起點（`86400`），與現場音軌分離，完美對齊。
 >    * **🚨 實戰血淚教訓與案例分析 (Case Post-Mortem - 2026/05/20)**：
 >      在 `run_ai2_edit.py` 的第一版實作中，雖然開發者知道此雷，但因為代碼邏輯順序是「先在 Step 4 執行了 BGM 載入置入，隨後才在 Step 8 執行影片 Sequential Append」，導致雖然 BGM 順利放到了 `86400`，但時間軸末端被撐大到 `87120`，隨後追加的 29 個視訊片段全部被 Resolve 自動塞到了 `87120` 之後。這造成「前 30 秒只有音樂黑畫面，後 30 秒有畫面卻無聲音」的嚴重聲畫分離。
 >      * **黃金修正鐵律**：在自動化代碼順序上，**必須讓「影片片段 Sequentially Append」物理性地排在「音樂靶向置入」之前！**
->        * *正確順序*：建立 Empty Timeline ➔ 順序拼接 Video Clips ➔ 清空 Audio Track 1 現場音 ➔ 音樂靶向置入 ➔ 疊加 Logo。
+>        * *正確順序*：建立 Empty Timeline ➔ 順序拼接 Video Clips ➔ 清空 Audio Track 1 現場音 ➔ 音樂靶向置入音軌 2 ➔ 疊加 Logo。
 >        順序只要錯置，時間軸必然錯位！
+>      * **🚨 2026/05/20 Reroll 增量替換現場音軌重疊與音樂意外丟失天坑 (Reroll Audio Overlap Landmine)**：
+>        * *地雷*：當執行 Reroll 動作物理替換新視訊片段時，達芬奇會自動把新影片隨片攜帶的相機現場音，再次寫入 **Audio Track 1** (音軌 1) 的對應位置，這會與放在音軌 1 上的 BGM 背景音樂重疊。如果引擎為了清空雜音，在結尾呼叫 `DeleteClips` 刪除音軌 1 的所有片段，**會連同音軌 1 上的 BGM背景音樂一併物理刪除**，導致音樂意外丟失！
+>        * *防禦解法（音軌分離黃金標準 Audio Track Separation）*：
+>          不要把背景音樂放在 Audio Track 1！將背景音樂 BGM 路由至 **Audio Track 2 (音軌 2)**，而 Audio Track 1 (音軌 1) 僅作為隨片相機現場雜音的暫存軌道。
+>          這使得 Reroll 引擎在清理現場雜音時，可以肆無忌憚地清空 Audio Track 1，而放在 Audio Track 2 的背景音樂 BGM 永遠毫髮無傷，從根本上杜絕了「音樂被誤刪」的物理天坑，同時完美符合了專業廣播級剪輯的音軌規劃黃金標準！
+>
 >
 >
 > 4. **AddMarker 相對影格座標系天坑 (時間軸標記錯位)**
