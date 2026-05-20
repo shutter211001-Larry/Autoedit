@@ -11,7 +11,7 @@ def connect_to_resolve():
     Connect to DaVinci Resolve script application interface.
     """
     try:
-        import DaVinciResolveScript as dvr_script
+        import DaVinciResolveScript as dvr_script  # type: ignore
         resolve = dvr_script.scriptapp("Resolve")
     except ImportError as e:
         print(f"❌ Cannot load DaVinciResolveScript SDK: {e}")
@@ -170,7 +170,7 @@ def append_bgm(media_pool, bgm_clip, best_t, max_duration_sec, timeline_start, f
     """
     # 確保當前時間軸至少有兩個音軌
     try:
-        import DaVinciResolveScript as dvr_script
+        import DaVinciResolveScript as dvr_script  # type: ignore
         resolve = dvr_script.scriptapp("Resolve")
         if resolve:
             current_project = resolve.GetProjectManager().GetCurrentProject()
