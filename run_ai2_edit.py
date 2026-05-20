@@ -261,6 +261,10 @@ def run_ai2_edit():
             tl.SetName(f"AI_2_Backup_{int(time.time())}")
             break
             
+    print("📱 Setting timeline resolution to 1080x1920 (9:16 Vertical)...")
+    current_project.SetSetting("timelineResolutionWidth", "1080")
+    current_project.SetSetting("timelineResolutionHeight", "1920")
+    
     print(f"🆕 建立全新空白時間軸: '{TIMELINE_NAME}'...")
     timeline = media_pool.CreateEmptyTimeline(TIMELINE_NAME)
     if not timeline:
@@ -788,18 +792,19 @@ def run_ai2_edit():
                 logo_items_v2 = timeline.GetItemListInTrack("video", 2)
                 logo_items_v3 = timeline.GetItemListInTrack("video", 3)
                 
+                # 套用 9:16 直式專屬雙 Logo 對稱居中排版 (擺放於畫面下三分之一處)
                 if logo_items_v2:
                     bc_item = logo_items_v2[0]
-                    bc_item.SetProperty("ZoomX", 0.35)
-                    bc_item.SetProperty("ZoomY", 0.35)
-                    bc_item.SetProperty("Pan", -260.0)
-                    bc_item.SetProperty("Tilt", -50.0)
+                    bc_item.SetProperty("ZoomX", 0.30)
+                    bc_item.SetProperty("ZoomY", 0.30)
+                    bc_item.SetProperty("Pan", -180.0)
+                    bc_item.SetProperty("Tilt", -250.0)
                 if logo_items_v3:
                     skp_item = logo_items_v3[0]
-                    skp_item.SetProperty("ZoomX", 0.35)
-                    skp_item.SetProperty("ZoomY", 0.35)
-                    skp_item.SetProperty("Pan", 260.0)
-                    skp_item.SetProperty("Tilt", -50.0)
+                    skp_item.SetProperty("ZoomX", 0.30)
+                    skp_item.SetProperty("ZoomY", 0.30)
+                    skp_item.SetProperty("Pan", 180.0)
+                    skp_item.SetProperty("Tilt", -250.0)
                 print("   ✅ Configured BC & Schwarzkopf Logo scales & coordinate panning.")
                 
         # ── 12. 鏡頭動態導演與角色軌道染色 ────────────────────────────────
@@ -834,6 +839,10 @@ def run_ai2_edit():
                 zoom_val = 1.20
                 rotation_val = 0.0
                 
+            # 套用 9:16 直式裁切縮放補償 (16:9 橫向素材塞入 9:16 直式時間軸需要乘以 3.16 放大填滿)
+            VERTICAL_CROP_ZOOM = 3.16
+            zoom_val = zoom_val * VERTICAL_CROP_ZOOM
+            
             try:
                 item.SetProperty("ZoomX", zoom_val)
                 item.SetProperty("ZoomY", zoom_val)
