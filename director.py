@@ -542,6 +542,20 @@ def run_editing_engine(config_data, aesthetic_override=None, vertical_override=N
                 config_rules=config_data.get("continuity_rules", {})
             )
             total_score += continuity_bonus
+            
+            # 產品優先加權機制：優先選中「純產品包裝/特寫畫面」或「手持產品互動畫面」
+            anno = solver.annotations.get(candidate["filename"], {})
+            cand_char = anno.get("character", "")
+            cand_act = anno.get("action", "")
+            if cand_act in ["product_holding", "product_closeup"] or cand_char in ["product_only", "model_with_product"]:
+                total_score += 15.0  # 強力加權以保證優先選入優質產品畫面
+                
+            # 特別強化開頭前段 (SETUP 角色) 的「純產品」展示比重
+            if role == "setup":
+                if cand_char == "product_only" or cand_act == "product_closeup":
+                    total_score += 30.0  # 超強力加權，確保開場即是極致的產品微距特寫
+                elif cand_char in ["speaker", "audience", "model_with_product"]:
+                    total_score -= 25.0  # 排除人像與互動，強制把最前面幾秒留給純淨的產品特寫
                     
             if total_score > best_score:
                 best_score = total_score

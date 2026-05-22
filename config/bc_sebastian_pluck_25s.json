@@ -1,0 +1,102 @@
+{
+  "project_name": "2605_BCbonacure",
+  "timeline_name": "AI_Sebastian_Pluck_25s",
+  "aspect_ratio": "9:16",
+  "source_footage_vertical": true,
+  "media_folder_path": "G:\\共用雲端硬碟\\專業髮品\\04影音部\\Larry\\Schwarzkopf\\260511\\Video\\D2\\PRIVATE\\M4ROOT\\CLIP",
+  "bgm_path": "D:\\SynologyDrive\\共用資源\\Artlist\\Music\\Sebastian Pangal - Pluck.wav",
+  "duration_seconds": 25.0,
+  "aesthetic_threshold": 0.00,
+  "prompts": {
+    "setup": "exquisite high-end exhibition product display, premium cosmetic bottle presentation, modern luxury hair salon booth setup",
+    "detail": "close-up of elegant cosmetic product bottle packaging, hands holding product bottle, applying hair essence styling details, premium hair product bottle close-up",
+    "catwalk": "fashion model presenting premium cosmetic product, elegant model smiling and holding product bottle close-up, premium hair product demonstration",
+    "finale": "grand finale premium branding product presentation close-up with logo, high-end cosmetic bottle showcase, exquisite studio lighting product layout"
+  },
+  "narrative_characters": {
+    "product_only": "elegant cosmetic product bottle, cosmetic display shelves, skincare packaging closeup",
+    "model_with_product": "model holding cosmetic product bottle, person interacting with product packaging",
+    "speaker": "professional speaker presenting on stage, hair expert talking to audience",
+    "audience": "audience clapping, people watching fashion show presentation"
+  },
+  "narrative_actions": {
+    "product_closeup": "macro extreme close-up of premium cosmetic product bottle styling packaging",
+    "product_holding": "holding a premium cosmetic product bottle in hand close-up, interacting with product",
+    "spray": "spraying hair spray product aerosol mist on hair, hair styling spray",
+    "combing": "combing or brushing hair, styling hair with hands",
+    "speaker_talking": "professional speaker presenting hair care product, speaker speaking on stage",
+    "audience_view": "audience looking at stage, people sitting and watching presentation"
+  },
+  "continuity_rules": {
+    "character_locking": {
+      "min_contiguous_cuts": 2,
+      "lock_bonus": 2.2,
+      "fatigue_penalty": -1.0
+    },
+    "action_causality": [
+      {
+        "trigger_action": "product_holding",
+        "prevent_repeat": false,
+        "repeat_penalty": 0.0,
+        "prefer_next_actions": ["product_closeup", "spray", "combing"],
+        "prefer_bonus": 1.5
+      },
+      {
+        "trigger_action": "product_closeup",
+        "prevent_repeat": false,
+        "repeat_penalty": 0.0,
+        "prefer_next_actions": ["product_holding", "spray"],
+        "prefer_bonus": 1.5
+      },
+      {
+        "trigger_action": "spray",
+        "prevent_repeat": true,
+        "repeat_penalty": -3.0,
+        "prefer_next_actions": ["combing", "product_holding", "product_closeup"],
+        "prefer_bonus": 1.2
+      }
+    ]
+  },
+  "narrative_schema": {
+    "segments": [
+      {
+        "role": "setup",
+        "up_to_seconds": 5.0,
+        "downsample_rate": 4
+      },
+      {
+        "role": "detail",
+        "up_to_seconds": 12.0,
+        "downsample_rate": 2
+      },
+      {
+        "role": "catwalk",
+        "up_to_seconds": 25.0,
+        "downsample_rate": 2
+      },
+      {
+        "role": "finale",
+        "up_to_seconds": 9999.0,
+        "downsample_rate": 4
+      }
+    ]
+  },
+  "outro_logos": [
+    {
+      "name": "BC_2018_LOGO.png",
+      "track": 2,
+      "zoom": 0.35,
+      "pan": -260.0,
+      "tilt": -50.0,
+      "duration_frames": 120
+    },
+    {
+      "name": "SKP_Logo_schwarz00000001.jpg",
+      "track": 3,
+      "zoom": 0.35,
+      "pan": 260.0,
+      "tilt": -50.0,
+      "duration_frames": 120
+    }
+  ]
+}
