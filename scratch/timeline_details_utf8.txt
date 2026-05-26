@@ -1,0 +1,286 @@
+Timeline Name: Timeline 1
+Total Video Items on Track 1: 38
+Total Subtitle Items on Track 1: 69
+
+================================================================================
+CORRELATED TIMELINE DETAILS
+================================================================================
+
+🎬 Video Clip #1 | Name: A001_03271231_C058.mov
+   Timeline Start: 216000 | End: 216087 | Duration: 87 frames
+   Source Start Frame: 28203
+   Subtitles spoken during this clip:
+     💬 大家好我是Mars
+     💬 我們這堂課呢
+
+🎬 Video Clip #2 | Name: A001_03271231_C058.mov
+   Timeline Start: 216087 | End: 216136 | Duration: 49 frames
+   Source Start Frame: 28323
+   Subtitles spoken during this clip:
+     💬 我們這堂課呢
+
+🎬 Video Clip #3 | Name: A001_03271231_C058.mov
+   Timeline Start: 216136 | End: 216242 | Duration: 106 frames
+   Source Start Frame: 28413
+   Subtitles spoken during this clip:
+     💬 分別是暹羅貓漂色
+
+🎬 Video Clip #4 | Name: A001_03271231_C058.mov
+   Timeline Start: 216242 | End: 216353 | Duration: 111 frames
+   Source Start Frame: 28575
+   Subtitles spoken during this clip:
+     💬 另外一個是不漂的霧感
+
+🎬 Video Clip #5 | Name: A001_03271242_C059.mov
+   Timeline Start: 216353 | End: 216632 | Duration: 279 frames
+   Source Start Frame: 4599
+   Subtitles spoken during this clip:
+     💬 我們在現場實作帶來的業績的成長是
+     💬 80%到90%
+
+🎬 Video Clip #6 | Name: A001_03271242_C059.mov
+   Timeline Start: 216632 | End: 216833 | Duration: 201 frames
+   Source Start Frame: 4963
+   Subtitles spoken during this clip:
+     💬 每個月大概都可以成長
+     💬 大概10萬到20萬左右
+
+🎬 Video Clip #7 | Name: A001_03271242_C059.mov
+   Timeline Start: 216833 | End: 216990 | Duration: 157 frames
+   Source Start Frame: 5203
+   Subtitles spoken during this clip:
+     💬 很值得所有設計師來上的一堂課
+
+🎬 Video Clip #8 | Name: A001_03271231_C058.mov
+   Timeline Start: 216990 | End: 217159 | Duration: 169 frames
+   Source Start Frame: 28873
+   Subtitles spoken during this clip:
+     💬 暹羅貓給我的是
+     💬 我的版面引流的張力
+     💬 90%的霧感髮色
+
+🎬 Video Clip #9 | Name: A001_03271231_C058.mov
+   Timeline Start: 217159 | End: 217446 | Duration: 287 frames
+   Source Start Frame: 29156
+   Subtitles spoken during this clip:
+     💬 90%的霧感髮色
+     💬 其實都是依靠我的IG
+     💬 版面的高張力引進來的
+
+🎬 Video Clip #10 | Name: A001_03271231_C058.mov
+   Timeline Start: 217446 | End: 217486 | Duration: 40 frames
+   Source Start Frame: 29469
+   Subtitles spoken during this clip:
+     💬 版面的高張力引進來的
+
+🎬 Video Clip #11 | Name: A001_03271231_C058.mov
+   Timeline Start: 217486 | End: 217526 | Duration: 40 frames
+   Source Start Frame: 29546
+   Subtitles spoken during this clip:
+     💬 版面的高張力引進來的
+
+🎬 Video Clip #12 | Name: A001_03271229_C056.mov
+   Timeline Start: 217526 | End: 217754 | Duration: 228 frames
+   Source Start Frame: 759
+   Subtitles spoken during this clip:
+     💬 那這次課程呢
+     💬 我們大概會解決幾個要點
+     💬 第一個
+
+🎬 Video Clip #13 | Name: A001_03271231_C058.mov
+   Timeline Start: 217754 | End: 217853 | Duration: 99 frames
+   Source Start Frame: 665
+   Subtitles spoken during this clip:
+     💬 暹羅貓的髮色
+
+🎬 Video Clip #14 | Name: A001_03271231_C058.mov
+   Timeline Start: 217853 | End: 217967 | Duration: 114 frames
+   Source Start Frame: 1914
+   Subtitles spoken during this clip:
+     💬 做出來的尾巴的那個黑色很生硬
+
+🎬 Video Clip #15 | Name: A001_03271231_C058.mov
+   Timeline Start: 217967 | End: 218145 | Duration: 178 frames
+   Source Start Frame: 2124
+   Subtitles spoken during this clip:
+     💬 做出來的尾巴的那個黑色很生硬
+     💬 不管是在拍照或是肉眼看的時候
+     💬 硬線都是非常明顯
+
+🎬 Video Clip #16 | Name: A001_03271231_C058.mov
+   Timeline Start: 218145 | End: 218220 | Duration: 75 frames
+   Source Start Frame: 2345
+   Subtitles spoken during this clip:
+     💬 硬線都是非常明顯
+
+🎬 Video Clip #17 | Name: A001_03271231_C058.mov
+   Timeline Start: 218220 | End: 218265 | Duration: 45 frames
+   Source Start Frame: 2476
+   Subtitles spoken during this clip:
+     💬 硬線都是非常明顯
+     💬 這次的課程要幫所有的設計師
+
+🎬 Video Clip #18 | Name: A001_03271231_C058.mov
+   Timeline Start: 218265 | End: 218358 | Duration: 93 frames
+   Source Start Frame: 2574
+   Subtitles spoken during this clip:
+     💬 這次的課程要幫所有的設計師
+
+🎬 Video Clip #19 | Name: A001_03271231_C058.mov
+   Timeline Start: 218358 | End: 218466 | Duration: 108 frames
+   Source Start Frame: 2758
+   Subtitles spoken during this clip:
+     💬 怎麼去做到淡化的效果
+
+🎬 Video Clip #20 | Name: A001_03271231_C058.mov
+   Timeline Start: 218466 | End: 218501 | Duration: 35 frames
+   Source Start Frame: 2919
+   Subtitles spoken during this clip:
+     💬 黑色、主色
+
+🎬 Video Clip #21 | Name: A001_03271231_C058.mov
+   Timeline Start: 218501 | End: 218532 | Duration: 31 frames
+   Source Start Frame: 3011
+   Subtitles spoken during this clip:
+     💬 黑色、主色
+     💬 是要怎麼能夠融合在一起
+
+🎬 Video Clip #22 | Name: A001_03271231_C058.mov
+   Timeline Start: 218532 | End: 218641 | Duration: 109 frames
+   Source Start Frame: 3046
+   Subtitles spoken during this clip:
+     💬 是要怎麼能夠融合在一起
+
+🎬 Video Clip #23 | Name: A001_03271231_C058.mov
+   Timeline Start: 218641 | End: 218720 | Duration: 79 frames
+   Source Start Frame: 3843
+   Subtitles spoken during this clip:
+     💬 區塊的公式配方
+     💬 我需要飽和度高的時候
+
+🎬 Video Clip #24 | Name: A001_03271231_C058.mov
+   Timeline Start: 218720 | End: 219225 | Duration: 505 frames
+   Source Start Frame: 20981
+   Subtitles spoken during this clip:
+     💬 我需要飽和度高的時候
+     💬 我的歐系染膏拿出來
+     💬 我能夠做到飽和
+     💬 但我需要淡化的時候
+     💬 我的歐系染膏同時
+     💬 也能做到一樣的效果
+
+🎬 Video Clip #25 | Name: A001_03271231_C058.mov
+   Timeline Start: 219225 | End: 219377 | Duration: 152 frames
+   Source Start Frame: 3963
+   Subtitles spoken during this clip:
+     💬 也能做到一樣的效果
+     💬 做出很多不一樣的色彩的感覺
+
+🎬 Video Clip #26 | Name: A001_03271229_C056.mov
+   Timeline Start: 219377 | End: 220217 | Duration: 840 frames
+   Source Start Frame: 1145
+   Subtitles spoken during this clip:
+     💬 15分鐘的高效裁剪
+     💬 讓大家在現場的時候
+     💬 翻桌率是能夠提升的
+     💬 那在漂髮的部分呢
+     💬 我們這次會帶大家
+     💬 去看如何漂到乾淨透亮的程度
+     💬 那我們去做上色的時候
+     💬 讓它更有光澤
+
+🎬 Video Clip #27 | Name: A001_03271230_C057.mov
+   Timeline Start: 220217 | End: 220974 | Duration: 757 frames
+   Source Start Frame: 140
+   Subtitles spoken during this clip:
+     💬 第二個主題呢
+     💬 我們這次會做一個不漂不退的霧感
+     💬 那依照2025的趨勢的延伸
+     💬 那我們這次實現所謂的一碗通刷
+     💬 不退不漂
+     💬 如何去做到最灰感最霧感的顏色
+
+🎬 Video Clip #28 | Name: A001_03271230_C057.mov
+   Timeline Start: 220974 | End: 221203 | Duration: 229 frames
+   Source Start Frame: 1726
+   Subtitles spoken during this clip:
+     💬 多段髮色
+     💬 呈現霧感
+     💬 透感
+     💬 及灰感
+     💬 針對白髮呢
+
+🎬 Video Clip #29 | Name: A001_03271242_C059.mov
+   Timeline Start: 221203 | End: 221257 | Duration: 54 frames
+   Source Start Frame: 1044
+   Subtitles spoken during this clip:
+     💬 針對白髮呢
+     💬 我用最簡單的配方比例
+
+🎬 Video Clip #30 | Name: A001_03271242_C059.mov
+   Timeline Start: 221257 | End: 221761 | Duration: 504 frames
+   Source Start Frame: 1402
+   Subtitles spoken during this clip:
+     💬 我用最簡單的配方比例
+     💬 去做到能夠實現
+     💬 白髮既有霧透感
+     💬 它也能蓋到70% 80%的程度
+
+🎬 Video Clip #31 | Name: A001_03271230_C057.mov
+   Timeline Start: 221761 | End: 221893 | Duration: 132 frames
+   Source Start Frame: 1582
+   Subtitles spoken during this clip:
+     💬 我們只需要一碗就能夠搞定
+
+🎬 Video Clip #32 | Name: A001_03271231_C058.mov
+   Timeline Start: 221893 | End: 222742 | Duration: 849 frames
+   Source Start Frame: 23947
+   Subtitles spoken during this clip:
+     💬 你做霧感色系的客人
+     💬 他終究有一天
+     💬 他也可能會需要做到漂髮
+     💬 你做漂髮的客人
+     💬 他也有一天可能會回歸到
+     💬 這種霧感的生活色
+     💬 所以我會把這兩種的理論
+     💬 把它套在一起
+
+🎬 Video Clip #33 | Name: A001_03271231_C058.mov
+   Timeline Start: 222742 | End: 222888 | Duration: 146 frames
+   Source Start Frame: 26300
+   Subtitles spoken during this clip:
+     💬 把它套在一起
+     💬 在課堂上實作展現給各位看
+
+🎬 Video Clip #34 | Name: A001_03271231_C058.mov
+   Timeline Start: 222888 | End: 222915 | Duration: 27 frames
+   Source Start Frame: 26465
+   Subtitles spoken during this clip:
+     💬 在課堂上實作展現給各位看
+     💬 用很精準的理論去分析出來
+
+🎬 Video Clip #35 | Name: A001_03271231_C058.mov
+   Timeline Start: 222915 | End: 222989 | Duration: 74 frames
+   Source Start Frame: 26523
+   Subtitles spoken during this clip:
+     💬 用很精準的理論去分析出來
+
+🎬 Video Clip #36 | Name: A001_03271231_C058.mov
+   Timeline Start: 222989 | End: 223046 | Duration: 57 frames
+   Source Start Frame: 26608
+   Subtitles spoken during this clip:
+     💬 用很精準的理論去分析出來
+     💬 你的消費者應該更適合哪一種
+
+🎬 Video Clip #37 | Name: A001_03271231_C058.mov
+   Timeline Start: 223046 | End: 223164 | Duration: 118 frames
+   Source Start Frame: 26724
+   Subtitles spoken during this clip:
+     💬 你的消費者應該更適合哪一種
+     💬 讓所有的設計師能夠更好的運用
+
+🎬 Video Clip #38 | Name: A001_03271231_C058.mov
+   Timeline Start: 223164 | End: 223269 | Duration: 105 frames
+   Source Start Frame: 24948
+   Subtitles spoken during this clip:
+     💬 讓所有的設計師能夠更好的運用
